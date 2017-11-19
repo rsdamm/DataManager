@@ -5,7 +5,7 @@
  */
 package com.plesba.datamanager;
 
-import com.plesba.datamanager.utils.DBConnection;
+import com.plesba.datamanager.utils.DBSetup;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.util.Properties;
@@ -18,7 +18,7 @@ public class DataManager {
     
         private static String propertiesFile = null;
         private static Properties dataMgrProps = null;
-        private static DBConnection dbConnection = null;
+        private static DBSetup dbConnection = null;
         
     public static void main(String[] args) throws IOException {
 
@@ -36,11 +36,12 @@ public class DataManager {
         dbConnection = getConnection(); 
         System.out.println(dbConnection.getConnectString());
         
+        System.out.println("Completed DataManager main........");
 
     }
-    public static DBConnection getConnection(){
+    public static DBSetup getConnection(){
     
-        return new DBConnection.ConnectionBuilder()
+        return new DBSetup.ConnectionBuilder()
                 .user(dataMgrProps.getProperty("database.user"))
                 .password(dataMgrProps.getProperty("database.password"))
                 .database(dataMgrProps.getProperty("database.database"))
