@@ -5,9 +5,12 @@
  */
 package com.plesba.datamanager;
 
-import com.plesba.datamanager.utils.DBSetup;
+import com.plesba.datamanager.source.CSVSource;
+import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.Properties;
 
 /**
@@ -18,7 +21,10 @@ public class DataManager {
     
         private static String propertiesFile = null;
         private static Properties dataMgrProps = null;
-        private static DBSetup dbConnection = null;
+        private static DBConnection dbConnection = null; 
+        private static PipedOutputStream outputStream = null;
+        private static PipedInputStream inputStream = null;
+        private static CSVSource csvReader = null;
         
     public static void main(String[] args) throws IOException {
 
@@ -33,21 +39,41 @@ public class DataManager {
         }
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        dbConnection = getConnection(); 
-        System.out.println(dbConnection.getConnectString());
+        dbSetup = getDB();
         
+        dbConnection = dbSetup.getSQLConnection();
+        //dbConnection = getConnection(); 
+        //System.out.println(dbConnection.getConnectString());
+        
+        inputStream = new PipedInputStream();
+        outputStream = new PipedOutputStream(inputStream);
+        
+        csvReader = new CSVSource(dataMgrProps.getProperty("filename"), outputStream); 
+        
+        new Thread(
+                new Runnable() {
+            public void run() {
+                csvReader.putDataOnOutputStream();
+            }
+        }
+        ).start();
+        
+//class2.processDataFromInputStream(in);  target class 
+        
+ 
         System.out.println("Completed DataManager main........");
 
     }
-    public static DBSetup getConnection(){
+    public static DBConnection getConnection(){
     
-        return new DBSetup.ConnectionBuilder()
+        return new DBConnection.ConnectionBuilder()
                 .user(dataMgrProps.getProperty("database.user"))
                 .password(dataMgrProps.getProperty("database.password"))
                 .database(dataMgrProps.getProperty("database.database"))
                 .port(dataMgrProps.getProperty("database.port"))
                 .driver(dataMgrProps.getProperty("database.driver"))
                 .host(dataMgrProps.getProperty("database.host"))
+                .host(dataMgrProps.getProperty("filename"))
                 .build();
     }   
       

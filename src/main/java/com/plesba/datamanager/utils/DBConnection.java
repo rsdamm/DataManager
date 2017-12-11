@@ -2,7 +2,7 @@ package com.plesba.datamanager.utils;
 
 import java.sql.*;
 
-public class DBSetup {
+public class DBConnection {
 
     Connection connection = null;
     private final String user; //required
@@ -13,7 +13,7 @@ public class DBSetup {
     private final String host; //required
     private final String port; //required
 
-    private DBSetup(ConnectionBuilder builder) {
+    private DBConnection(ConnectionBuilder builder) {
         this.user = builder.user;
         this.password = builder.password;
         this.driver = builder.driver;
@@ -101,8 +101,8 @@ public class DBSetup {
 
         }
 
-        public DBSetup build() {
-            return new DBSetup(this);
+        public DBConnection build() {
+            return new DBConnection(this);
         }
    }
         private void connect() {
@@ -121,7 +121,7 @@ public class DBSetup {
             }
         }
  
-    public Connection getSQLConnection() {
+    public Connection getConnection() {
         return this.connection;
     }
 }
