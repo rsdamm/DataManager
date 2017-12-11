@@ -13,12 +13,12 @@ import java.util.Properties;
  *
  * @author REnee
  */
-public class DBPropertiesTest {
+public class DMPropertiesTest {
     
     private static final String propertiesFile =  "/home/renee/git/DataManager/testconfig.altproperties";
     private static Properties dataMgrProps = null;
     
-    public DBPropertiesTest() {
+    public DMPropertiesTest() {
     }
     
     @BeforeClass
@@ -42,7 +42,7 @@ public class DBPropertiesTest {
      */
     @Test
     public void testGetDBHost() {
-        System.out.println("testing get Host");    
+        System.out.println("testing getDBHost");    
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "bigkittycats";
         String result = dataMgrProps.getProperty("database.host");
@@ -122,6 +122,17 @@ public class DBPropertiesTest {
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "org.postgresql.Driver";
         String result = dataMgrProps.getProperty("database.driver");
+        assertEquals(expResult, result); 
+    }
+        /**
+     * Test of getDBDriver method, of class DBProperties.
+     */
+    @Test
+    public void testGetFilename() {
+        System.out.println("testing testGetFilename");
+        dataMgrProps = new DMProperties(propertiesFile).getProp();
+        String expResult = "testpropertiesfilename.dat";
+        String result = dataMgrProps.getProperty("filename");
         assertEquals(expResult, result); 
     }
     

@@ -8,6 +8,7 @@ package com.plesba.datamanager;
 import com.plesba.datamanager.source.CSVSource;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
+import com.plesba.datamanager.target.DBWriter;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -27,6 +28,7 @@ public class DataManager {
         private static PipedOutputStream outputStream = null;
         private static PipedInputStream inputStream = null;
         private static CSVSource csvReader = null;
+        private static DBWriter dbLoader = null; 
         
     public static void main(String[] args) throws IOException {
 
@@ -49,6 +51,7 @@ public class DataManager {
         outputStream = new PipedOutputStream(inputStream);
         
         csvReader = new CSVSource(dataMgrProps.getProperty("filename"), outputStream); 
+        dbLoader = new DBWriter(connection, inputStream);
         
         new Thread(
                 new Runnable() {
@@ -57,8 +60,8 @@ public class DataManager {
             }
         }
         ).start();
-        
-//class2.processDataFromInputStream(in);  target class 
+          System.out.println("Beging loading DB=");
+        dbLoader.getDataFromInputStream();
         
  
         System.out.println("Completed DataManager main........");
@@ -72,8 +75,7 @@ public class DataManager {
                 .database(dataMgrProps.getProperty("database.database"))
                 .port(dataMgrProps.getProperty("database.port"))
                 .driver(dataMgrProps.getProperty("database.driver"))
-                .host(dataMgrProps.getProperty("database.host"))
-                .host(dataMgrProps.getProperty("filename"))
+                .host(dataMgrProps.getProperty("database.host")) 
                 .build();
     }   
       

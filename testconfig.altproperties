@@ -8,5 +8,4 @@ database.password = youonlywish
 database.database = pintopony
 database.port = 5432
 database.driver = org.postgresql.Driver
-
-
+filename = testpropertiesfilename.dat
