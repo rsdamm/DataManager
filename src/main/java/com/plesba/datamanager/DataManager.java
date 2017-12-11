@@ -11,6 +11,7 @@ import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.sql.Connection;
 import java.util.Properties;
 
 /**
@@ -22,6 +23,7 @@ public class DataManager {
         private static String propertiesFile = null;
         private static Properties dataMgrProps = null;
         private static DBConnection dbConnection = null; 
+        private static Connection connection = null; 
         private static PipedOutputStream outputStream = null;
         private static PipedInputStream inputStream = null;
         private static CSVSource csvReader = null;
@@ -39,11 +41,9 @@ public class DataManager {
         }
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        dbSetup = getDB();
+        dbConnection = getDBConnection();
         
-        dbConnection = dbSetup.getSQLConnection();
-        //dbConnection = getConnection(); 
-        //System.out.println(dbConnection.getConnectString());
+        connection = dbConnection.getConnection(); 
         
         inputStream = new PipedInputStream();
         outputStream = new PipedOutputStream(inputStream);
@@ -64,7 +64,7 @@ public class DataManager {
         System.out.println("Completed DataManager main........");
 
     }
-    public static DBConnection getConnection(){
+    public static DBConnection getDBConnection(){
     
         return new DBConnection.ConnectionBuilder()
                 .user(dataMgrProps.getProperty("database.user"))

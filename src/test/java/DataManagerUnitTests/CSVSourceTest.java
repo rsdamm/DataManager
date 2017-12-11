@@ -80,7 +80,7 @@ public class CSVSourceTest {
         
         System.out.println("CSVSourceTest Input file record count : " + recordCount);
         
-        int result = csvReader.GetReadCount();
+        int result = csvReader.getReadCount();
         System.out.println("Loaded " + result + " records");
         
         System.out.println("CSVSourceTest Stream written count: " + result);

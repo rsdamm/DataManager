@@ -6,8 +6,8 @@ package DataManagerUnitTests;
  * and open the template in the editor.
  */
 
-
-import static com.plesba.datamanager.DataManager.getConnection; 
+ 
+import com.plesba.datamanager.utils.*; 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;

@@ -75,7 +75,7 @@ public final class CSVSource
                     throw new RuntimeException(e);
        }
    }
-   public int GetReadCount ()    {
+   public int getReadCount ()    {
         return this.recordCount ;
    }
  
