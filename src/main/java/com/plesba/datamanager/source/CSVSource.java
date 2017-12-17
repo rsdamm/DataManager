@@ -49,8 +49,7 @@ public final class CSVSource
        
        try {
        while ((nextLine = reader.readNext()) != null)
-        { 
-          System.out.println("Preparing record to load--->>>");
+        {  
           for (i=0; i < nextLine.length; i++) {        
               
             if (i>0) {
@@ -64,13 +63,16 @@ public final class CSVSource
           
           theByteArray = recordStringBuffer.toString().getBytes(); 
           outputStream.write(theByteArray);
-          
-          System.out.println("Writing record to stream---> "+ recordStringBuffer);
-          //theByteArray = (nextLine[1]+ "\n").getBytes(); 
+
+          System.out.println("Writing record to stream---> "+ recordStringBuffer); 
  
           recordCount++;
           recordStringBuffer.setLength(0);
         } 
+        
+        System.out.println("end of data stream"+ recordStringBuffer);
+        outputStream.close();
+        
        } catch (IOException e) {
                     throw new RuntimeException(e);
        }

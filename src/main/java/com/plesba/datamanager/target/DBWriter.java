@@ -9,6 +9,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -21,6 +23,7 @@ public class DBWriter {
     private final String insert_dml = "INSERT INTO ham_call_signs (NAME, CALL_SIGN) VALUES (?, ?)";
     private PreparedStatement stmt = null;
     private int recordCount = 0;
+    private List<String> cols ;
 
     public DBWriter(Connection parameterConnection, PipedInputStream parameterInputStream) {
         inputStream = parameterInputStream;
@@ -33,34 +36,40 @@ public class DBWriter {
         connection = null;
     }
 
-    public void getDataFromInputStream() throws IOException {
+    public void processDataFromInputStream() throws IOException {
 
-        try {
+        try { 
 
+            
+            StringBuilder recordStringBuffer = new StringBuilder(); 
+            String streamRecord = new String();
             stmt = connection.prepareStatement(insert_dml);
             //Read one line at a time
 
-            int streamRecord = inputStream.read();
+            int streamByte = inputStream.read();
 
-            while (streamRecord != -1) {
-
-                {
-                    //stmt.setString(1, nextLine[0]);
-                    //stmt.setString(2, nextLine[1]);
-
-                        System.out.println("Inserting: " + streamRecord);
-                    //stmt.executeUpdate();
-                    recordCount++;
-                    
-                    streamRecord = inputStream.read();
+            while (streamByte != -1) {  
+                                        
+                    if (streamByte != 10) {
+                        recordStringBuffer.append((char) streamByte);
+                    } else {
+                        cols = Arrays.asList(recordStringBuffer.toString().split(","));
+                        stmt.setString(1, cols.get(0));
+                        stmt.setString(2, cols.get(1));
+                        stmt.executeUpdate(); 
+                        recordCount++;
+                        streamRecord =recordStringBuffer.toString();
+                        System.out.println("Processed record: " + streamRecord);                       
+                        recordStringBuffer.setLength(0);
+                    }    
+                 streamByte = inputStream.read();
 
                 }
+            
                 connection.commit();
                 System.out.println("Inserted records: " + recordCount);
-
-                //getRecords();
+             
             }
-        }
             catch (java.sql.SQLException e) {
             System.err.println (e);
             e.printStackTrace();

@@ -60,8 +60,8 @@ public class DataManager {
             }
         }
         ).start();
-          System.out.println("Beging loading DB=");
-        dbLoader.getDataFromInputStream();
+          System.out.println("Beginning loading DB=");
+        dbLoader.processDataFromInputStream();
         
  
         System.out.println("Completed DataManager main........");
