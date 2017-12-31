@@ -1,0 +1,11 @@
+applicationName=KConsumerit
+streamName=KinesisDBLoader1
+kinesisEndpoint=https://kinesis.us-east-1.amazonaws.com
+initialPositionInStream=TRIM_HORIZON
+database.host = bigkittycats
+database.user = bigcat
+database.password = youonlywish
+database.database = pintopony
+database.port = 5432
+database.driver = org.postgresql.Driver
+filename = testpropertiesfilename.dat
