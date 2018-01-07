@@ -10,3 +10,5 @@
 *.csv*
 /target/
 nbactions.xml
+Maven*.xml
+*.iml
