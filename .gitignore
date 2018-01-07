@@ -1,4 +1,5 @@
 /JavaApplication2/nbproject/private/
+.idea/
 /JavaApplication2/build/
 /ProgrammingLabs/nbproject/private/
 /Maps/nbproject/private/
@@ -10,3 +11,5 @@
 *.csv*
 /target/
 nbactions.xml
+Maven*.xml
+*.iml

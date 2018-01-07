@@ -9,6 +9,7 @@ import com.plesba.datamanager.source.CSVSource;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 import com.plesba.datamanager.target.DBWriter;
+import com.plesba.datamanager.target.CSVWriter;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -29,7 +30,8 @@ public class DataManager {
         private static PipedInputStream inputStream = null;
         private static CSVSource csvReader = null;
         private static DBWriter dbLoader = null; 
-        
+        private static CSVWriter csvWriter = null;
+
     public static void main(String[] args) throws IOException {
 
         System.out.println("Starting DataManager main........");
@@ -43,27 +45,38 @@ public class DataManager {
         }
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        dbConnection = getDBConnection();
-        
-        connection = dbConnection.getConnection(); 
+
+
         
         inputStream = new PipedInputStream();
         outputStream = new PipedOutputStream(inputStream);
-        
-        csvReader = new CSVSource(dataMgrProps.getProperty("filename"), outputStream); 
-        dbLoader = new DBWriter(connection, inputStream);
-        
+
+        //pick a reader
+
+        System.out.println("Selected read from csv file: " + dataMgrProps.getProperty("filename"));
+        csvReader = new CSVSource(dataMgrProps.getProperty("filename"), outputStream);
         new Thread(
                 new Runnable() {
-            public void run() {
-                csvReader.putDataOnOutputStream();
-            }
-        }
+                    public void run() {
+                        csvReader.putDataOnOutputStream();
+                    }
+                }
         ).start();
-          System.out.println("Beginning loading DB=");
-        dbLoader.processDataFromInputStream();
-        
- 
+
+        // pick a writer
+
+        //dbwriter
+        // System.out.println("Selected write to database ");
+        //dbConnection = getDBConnection();
+        //connection = dbConnection.getConnection();
+        //dbLoader = new DBWriter(connection, inputStream);
+        //System.out.println("Beginning loading DB");
+        //dbLoader.processDataFromInputStream();
+
+        //csvwriter
+        System.out.println("Selected write to csv file: " + dataMgrProps.getProperty("outfilename"));
+        csvWriter = new CSVWriter(dataMgrProps.getProperty("outfilename"), inputStream);
+        csvWriter.processDataFromInputStream();
         System.out.println("Completed DataManager main........");
 
     }

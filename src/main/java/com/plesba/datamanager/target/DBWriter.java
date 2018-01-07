@@ -16,7 +16,7 @@ import java.util.List;
  *
  * @author renee
  *
- *   Writes to postgresql database.....
+ *   Writes to postgreSQL database.....
  */
 public class DBWriter {
 
