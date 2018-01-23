@@ -10,6 +10,7 @@ import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.amazonaws.services.kinesis.model.*;
 import java.io.IOException;
+import java.io.PipedInputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -25,27 +26,26 @@ import java.util.stream.Stream;
 
 public class KinesisProducer {
 
-        private final String loadFileName;
+        private final String outStreamName;
+        private final PipedInputStream inputStream;
         private int recordCount;
-        final String theStreamName;
         Integer myStreamSize;
         DescribeStreamRequest describeStreamRequest ;
         List<Future<UserRecordResult>> putFutures = null;
         private static AmazonKinesisClient kinesis;
 
-        public KinesisProducer(String sfn, String lfn) throws InterruptedException {
-            loadFileName = lfn;
+        public KinesisProducer(String parameterStreamName, PipedInputStream parameterInputStream) throws InterruptedException {
+            outStreamName = parameterStreamName;
             recordCount = 0;
-            theStreamName= sfn;
             describeStreamRequest = null;
             myStreamSize=1;
-            initializeStream(theStreamName);
+            initializeStream(outStreamName);
         }
 
         public int GetLoadedCount() {
             return this.recordCount;
         }
-        public void initializeStream(String theStreamName) throws InterruptedException {
+        public void initializeStream(String kStreamName) throws InterruptedException {
 
             AmazonKinesisClientBuilder clientBuilder = AmazonKinesisClientBuilder.standard();
             //            clientBuilder.setRegion(regionName);
@@ -55,10 +55,10 @@ public class KinesisProducer {
             AmazonKinesis kinesis = clientBuilder.build();
 
             //create stream if it doesn't exist
-            describeStreamRequest = new DescribeStreamRequest().withStreamName(theStreamName);
+            describeStreamRequest = new DescribeStreamRequest().withStreamName(outStreamName);
             try {
                 StreamDescription streamDescription = kinesis.describeStream(describeStreamRequest).getStreamDescription();
-                System.out.printf("Stream %s has a status of %s.\n", theStreamName, streamDescription.getStreamStatus());
+                System.out.printf("Stream %s has a status of %s.\n", outStreamName, streamDescription.getStreamStatus());
 
                 if ("DELETING".equals(streamDescription.getStreamStatus())) {
                     System.out.println("Stream is being deleted. Processing terminating.");
@@ -67,18 +67,18 @@ public class KinesisProducer {
 
                 // Wait for the stream to become active if it is not yet ACTIVE.
                 if (!"ACTIVE".equals(streamDescription.getStreamStatus())) {
-                    waitForStreamToBecomeAvailable(theStreamName);
+                    waitForStreamToBecomeAvailable(kStreamName);
                 }
             } catch (ResourceNotFoundException ex) {
-                System.out.printf("Stream %s does not exist. Creating it now.\n", theStreamName);
+                System.out.printf("Stream %s does not exist. Creating it now.\n", kStreamName);
 
                 // Create a stream. The number of shards determines the provisioned throughput.
                 CreateStreamRequest createStreamRequest = new CreateStreamRequest();
-                createStreamRequest.setStreamName(theStreamName);
+                createStreamRequest.setStreamName(kStreamName);
                 createStreamRequest.setShardCount(myStreamSize);
                 kinesis.createStream(createStreamRequest);
                 // The stream is now being created. Wait for it to become active.
-                waitForStreamToBecomeAvailable(theStreamName);
+                waitForStreamToBecomeAvailable(kStreamName);
             }
 
 
@@ -113,7 +113,7 @@ public class KinesisProducer {
 
             throw new RuntimeException(String.format("Stream %s never became active", myStreamName));
         }
-        public void run() {
+        public void processDataFromInputStream() {
 
             KinesisProducerConfiguration config = KinesisProducerConfiguration.fromPropertiesFile(configFileName);
             final KinesisProducer kinesisProducer = new KinesisProducer(config);
