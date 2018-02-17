@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author renee
  *
- *   Writes to postgreSQL database.....
+ *   Writes to csv file
  */
 public class CSVWriter {
 
