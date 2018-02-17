@@ -5,7 +5,6 @@ import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.producer.Attempt;
-import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.amazonaws.services.kinesis.model.*;
@@ -116,7 +115,12 @@ public class KinesisProducer {
         public void processDataFromInputStream() {
 
             KinesisProducerConfiguration config = KinesisProducerConfiguration.fromPropertiesFile(configFileName);
-            final KinesisProducer kinesisProducer = new KinesisProducer(config);
+            final KinesisProducer kinesisProducer;
+            try {
+                kinesisProducer = new KinesisProducer(config);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
 
             try {
