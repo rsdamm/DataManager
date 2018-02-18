@@ -18,7 +18,7 @@ import java.util.List;
  *
  *   Writes to postgreSQL database.....
  */
-public class DBWriter {
+public class DBTarget {
 
     private final Connection connection;
     private final PipedInputStream inputStream;
@@ -27,13 +27,13 @@ public class DBWriter {
     private int recordCount = 0;
     private List<String> cols ;
 
-    public DBWriter(Connection parameterConnection, PipedInputStream parameterInputStream) {
+    public DBTarget(Connection parameterConnection, PipedInputStream parameterInputStream) {
         inputStream = parameterInputStream;
         connection = parameterConnection;
 
     }
 
-    public DBWriter() {
+    public DBTarget() {
         inputStream = null;
         connection = null;
     }

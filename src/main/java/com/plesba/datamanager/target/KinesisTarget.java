@@ -23,12 +23,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Properties;
 
-public class KinesisWriter {
+public class KinesisTarget {
 
     private final PipedInputStream inputStream;
 
     private final String streamName;
-    private final String initialPosition;
     private final String regionName;
     private final Integer streamSize;
     private final String partitionKeyName;
@@ -41,14 +40,13 @@ public class KinesisWriter {
     private int recordCount;
 
 
-    public KinesisWriter(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
+    public KinesisTarget(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
 
         inputStream = parameterInputStream;
         recordCount = 0;
         describeStreamRequest = null;
 
         streamName = parameterProperties.getProperty("kinesis.streamname");
-        initialPosition = parameterProperties.getProperty("kinesis.initialpositioninstream");
         streamSize = Integer.parseInt(parameterProperties.getProperty("kinesis.streamsize"));
         regionName = parameterProperties.getProperty("kinesis.region");
         partitionKeyName = parameterProperties.getProperty("kinesis.partitionKey");
@@ -153,7 +151,7 @@ public class KinesisWriter {
                     try {
                         putFutures.add(kinesisProducer.addUserRecord(streamName, partitionKeyName, ByteBuffer.wrap(streamRecord.getBytes("UTF-8"))));
                     } catch (UnsupportedEncodingException ex) {
-                        Logger.getLogger(KinesisWriter.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     recordCount = recordCount + 1;
                     streamByte = inputStream.read();
@@ -178,13 +176,13 @@ public class KinesisWriter {
                 //getRecords();
             }
         } catch(UnsupportedEncodingException ex){
-                Logger.getLogger(KinesisWriter.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         } catch(InterruptedException ex){
-                Logger.getLogger(KinesisWriter.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }catch(IOException ex){
-            Logger.getLogger(KinesisWriter.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }catch(ExecutionException ex){
-            Logger.getLogger(KinesisWriter.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

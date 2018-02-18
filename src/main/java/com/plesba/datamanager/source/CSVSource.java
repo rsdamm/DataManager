@@ -10,7 +10,7 @@ public final class CSVSource
 {    
     private final String fileToRead;
     
-    private CSVReader reader = null; 
+    private com.opencsv.CSVReader reader = null;
     private PipedOutputStream outputStream = null;
     private int recordCount = 0; 
     private String [] nextLine = null;  
@@ -18,7 +18,7 @@ public final class CSVSource
     private StringBuilder recordStringBuffer;
     private int i=0;
     
-    public CSVSource ( String rfn, PipedOutputStream oStream ) {
+    public CSVSource(String rfn, PipedOutputStream oStream ) {
        fileToRead = rfn;  
        outputStream = oStream;
        csvreaderSetup();
@@ -34,8 +34,8 @@ public final class CSVSource
     public void csvreaderSetup() {
 
         try {
-             //Get the CSVReader instance specifying the delimiter to be used
-            reader = new CSVReader(new FileReader(fileToRead),',');              
+             //Get the CSVSource instance specifying the delimiter to be used
+            reader = new com.opencsv.CSVReader(new FileReader(fileToRead),',');
             }   
         catch (IOException e) {
             System.err.println (e);

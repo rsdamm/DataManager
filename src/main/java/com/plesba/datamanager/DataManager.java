@@ -6,9 +6,10 @@
 package com.plesba.datamanager;
 
 import com.plesba.datamanager.source.CSVSource;
-import com.plesba.datamanager.target.CSVWriter;
-import com.plesba.datamanager.target.DBWriter;
-import com.plesba.datamanager.target.KinesisWriter;
+import com.plesba.datamanager.target.KinesisTarget;
+import com.plesba.datamanager.target.CSVTarget;
+import com.plesba.datamanager.target.DBTarget;
+import com.plesba.datamanager.source.KinesisSource;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 
@@ -31,11 +32,13 @@ public class DataManager {
         private static Connection connection = null;
         private static PipedOutputStream outputStream = null;
         private static PipedInputStream inputStream = null;
-        private static CSVSource csvReader = null;
-        private static DBWriter dbLoader = null; 
-        private static CSVWriter csvWriter = null;
-        private static KinesisWriter kWriter = null;
+        private static CSVSource csvSource = null;
+        private static DBTarget dbLoader = null;
+        private static CSVTarget csvWriter = null;
+        private static KinesisTarget kWriter = null;
+        private static KinesisSource kReader = null;
         private static Properties kwProp;
+        private static Properties krProp;
 
     public static void main(String[] args) throws IOException {
 
@@ -54,50 +57,71 @@ public class DataManager {
         inputStream = new PipedInputStream();
         outputStream = new PipedOutputStream(inputStream);
 
-        //pick a reader
+        //pick a source
 
+        //csvreader - read from csv file write to output stream
         System.out.println("Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
-        csvReader = new CSVSource(dataMgrProps.getProperty("outfilename"), outputStream);
+        csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream);
         new Thread(
                 new Runnable() {
                     public void run() {
-                        csvReader.putDataOnOutputStream();
+                        csvSource.putDataOnOutputStream();
                     }
                 }
         ).start();
 
-        // pick a writer
+        //dbreader
 
-        //dbwriter
+        //kinesis consumer, reader
+        System.out.println("Selected read from Kinesis stream/write to output stream: ");
+
+        krProp = new Properties();
+        krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
+        krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
+        krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
+        krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
+        krProp.setProperty("kinesis.endpoint", dataMgrProps.getProperty("kinesis.endpoint"));
+        krProp.setProperty("kinesis.initialpositioninstream", dataMgrProps.getProperty("kinesis.initialpositioninstream"));
+        krProp.setProperty("kinesis.redisport", dataMgrProps.getProperty("kinesis.redisport"));
+        krProp.setProperty("kinesis.redisendpoint", dataMgrProps.getProperty("kinesis.redisendpoint"));
+        krProp.setProperty("kinesis.applicationname", dataMgrProps.getProperty("kinesis.applicationname"));
+
+        try {
+            kReader = new KinesisReader(krProp, outputStream);
+            kReader.processDatafromStream();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        // pick a target
+
+        //dbwriter - read from input stream / write to db
         // System.out.println("Selected write to database ");
         //dbConnection = getDBConnection();
         //connection = dbConnection.getConnection();
-        //dbLoader = new DBWriter(connection, inputStream);
+        //dbLoader = new DBTarget(connection, inputStream);
         //System.out.println("Beginning loading DB");
         //dbLoader.processDataFromInputStream();
 
-        //csvwriter
+        //csvwriter - read from input / stream write to csv file
         //System.out.println("Selected write to csv file: " + dataMgrProps.getProperty("outfilename"));
-        //csvWriter = new CSVWriter(dataMgrProps.getProperty("outfilename"), inputStream);
+        //csvWriter = new CSVTarget(dataMgrProps.getProperty("outfilename"), inputStream);
         //csvWriter.processDataFromInputStream();
 
-        //kinesisproducerwriter
+        //kinesis producer, read from input stream / write to kinesis stream (producer)
         System.out.println("Selected write to Kinesis stream: ");
 
         kwProp = new Properties();
-        kwProp.setProperty("kinesis.applicationname ", dataMgrProps.getProperty("kinesis.applicationname "));
         kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
         kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
-        kwProp.setProperty("kinesis.endpoint", dataMgrProps.getProperty("kinesis.endpoint"));
         kwProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
-        kwProp.setProperty("kinesis.initialpositioninstream", dataMgrProps.getProperty("kinesis.initialpositioninstream"));
         kwProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
 
         try {
-            kWriter = new KinesisWriter(kwProp, inputStream);
+            kWriter = new KinesisTarget(kwProp, inputStream);
             kWriter.processDataFromInputStream();
         } catch (InterruptedException ex) {
-            Logger.getLogger(KinesisWriter.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         System.out.println("Completed DataManager Main.");

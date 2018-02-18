@@ -19,19 +19,19 @@ import java.util.List;
  *
  *   Writes to csv file
  */
-public class CSVWriter {
+public class CSVTarget {
 
     private final PipedInputStream inputStream;
     private int recordCount = 0;
     private FileWriter fileWriter;
     private String outFile;
 
-    public CSVWriter( String parameterOutFilename, PipedInputStream parameterInputStream) {
+    public CSVTarget(String parameterOutFilename, PipedInputStream parameterInputStream) {
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
     }
 
-    public CSVWriter() {
+    public CSVTarget() {
         inputStream = null;
         fileWriter = null;
     }
