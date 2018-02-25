@@ -97,7 +97,7 @@ public class KinesisSource {
         configure();
 
     }
-
+ 
     private static void configure(String propertiesFile) throws IOException {
 
 
