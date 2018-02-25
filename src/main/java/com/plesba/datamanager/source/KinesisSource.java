@@ -35,16 +35,20 @@ import org.apache.commons.logging.LogFactory;
 public class KinesisSource {
 
     private static final String DEFAULT_APP_NAME = "KinesisConsumerDefault";
+    private static final int DEFAULT_STREAMSIZE =  2;
     private static final String DEFAULT_STREAMNAME = "KinesisLoaderDefault";
     private static final String DEFAULT_KINESIS_ENDPOINT = "https://kinesis.us-xxxx-1.amazonaws.com";
+    private static final String DEFAULT_KINESIS_REGION = "us-east-1";
     private static final InitialPositionInStream DEFAULT_INITIAL_POSITION = InitialPositionInStream.LATEST; // Position can be one of LATEST (most recent data) or TRIM_HORIZON (oldest available data)
+    private static final String DEFAULT_PARTITION_KEY = "defaultPartitionKey"
 
     private static String applicationName = DEFAULT_APP_NAME;
+    private static int streamSize = DEFAULT_STREAMSIZE;
     private static String streamName = DEFAULT_STREAMNAME;
     private static String kinesisEndpoint = DEFAULT_KINESIS_ENDPOINT;
+    private static String kinesisRegion = DEFAULT_KINESIS_REGION;
     private static InitialPositionInStream initialPositionInStream = DEFAULT_INITIAL_POSITION;
-    private static String redisEndpoint = DEFAULT_KINESIS_ENDPOINT;
-    private static int redisPort = 6379;
+    private static String partitionKey = DEFAULT_PARTITION_KEY;
 
     private static KinesisClientLibConfiguration kinesisClientLibConfiguration;
     private static AWSCredentialsProvider credentialsProvider = null;
@@ -52,11 +56,45 @@ public class KinesisSource {
 
     private static final Log LOG = LogFactory.getLog(KConsumer.class);
 
-    private KinesisReader(Properties parameterProperties, PipedOutputStream oStream ) {
+    private KinesisSource(Properties parameterProperties, PipedOutputStream oStream ) {
 
-        loadProperties(parameterProperties);
+        String appNameOverride = parameterProperties.getProperty("kinesis.applicationname");
+        if (appNameOverride != null) {
+            applicationName = appNameOverride;
+        }
+        LOG.info("Using application name " + applicationName);
+
+        String streamNameOverride = parameterProperties.getProperty("kinesis.streamname");
+        if (streamNameOverride != null) {
+            streamName = streamNameOverride;
+        }
+        LOG.info("Using stream name " + streamName);
+
+        String streamSizeOverride = parameterProperties.getProperty("kinesis.streamsize");
+        if (streamSizeOverride != null) {
+            streamSize = streamSizeOverride;
+        }
+        LOG.info("Using stream size " + streamSize);
+
+        String initialPositionInStreamOverride = parameterProperties.getProperty("kinesis.initialpositioninstream");
+        if (initialPositionInStreamOverride != null) {
+            initialPositionInStream = initialPositionInStreamOverride;
+        }
+        LOG.info("Using  name " + initialPositionInStream);
+
+        String kinesisEndpointOverride = parameterProperties.getProperty("kinesis.endpoint");
+        if (kinesisEndpointOverride != null) {
+            kinesisEndpoint = kinesisEndpointOverride;
+        }
+        LOG.info("Using Kinesis endpoint " + kinesisEndpoint);
+
+        String kinesisRegionOverride = parameterProperties.getProperty("kinesis.region");
+        if (kinesisRegionOverride != null) {
+            kinesisRegion = kinesisRegionOverride;
+        }
+        LOG.info("Using Kinesis region " + kinesisRegion);
+
         configure();
-
 
     }
 
@@ -99,59 +137,7 @@ public class KinesisSource {
     }
 
 
-    private static void loadProperties(String propertiesFile) throws IOException {
 
-        System.out.print("Loading properties from file: " + propertiesFile);
-
-        FileInputStream inputStream = new FileInputStream(propertiesFile);
-        Properties properties = new Properties();
-        try {
-            properties.load(inputStream);
-        } finally {
-            inputStream.close();
-        }
-
-        String appNameOverride = properties.getProperty(ConfigKeys.APPLICATION_NAME_KEY);
-        if (appNameOverride != null) {
-            applicationName = appNameOverride;
-        }
-        LOG.info("Using application name " + applicationName);
-
-        String streamNameOverride = properties.getProperty(ConfigKeys.STREAM_NAME_KEY);
-        if (streamNameOverride != null) {
-            streamName = streamNameOverride;
-        }
-        LOG.info("Using stream name " + streamName);
-
-        String kinesisEndpointOverride = properties.getProperty(ConfigKeys.KINESIS_ENDPOINT_KEY);
-        if (kinesisEndpointOverride != null) {
-            kinesisEndpoint = kinesisEndpointOverride;
-        }
-        LOG.info("Using Kinesis endpoint " + kinesisEndpoint);
-
-        String initialPositionOverride = properties.getProperty(ConfigKeys.INITIAL_POSITION_IN_STREAM_KEY);
-        if (initialPositionOverride != null) {
-            initialPositionInStream = InitialPositionInStream.valueOf(initialPositionOverride);
-        }
-        LOG.info("Using initial position " + initialPositionInStream.toString() + " (if a checkpoint is not found).");
-
-        String redisEndpointOverride = properties.getProperty(ConfigKeys.REDIS_ENDPOINT_KEY);
-        if (redisEndpointOverride != null) {
-            redisEndpoint = redisEndpointOverride;
-        }
-        LOG.info("Using Redis endpoint " + redisEndpoint);
-
-        String redisPortOverride = properties.getProperty(ConfigKeys.REDIS_PORT_KEY);
-        if (redisPortOverride != null) {
-            try {
-                redisPort = Integer.parseInt(redisPortOverride);
-            } catch (NumberFormatException e) {
-
-            }
-        }
-        LOG.info("Using Redis port " + redisPort);
-
-    }
     public void processDatafromStream() {
 
         IRecordProcessorFactory recordProcessorFactory = new KCRecordProcessorFactory();
