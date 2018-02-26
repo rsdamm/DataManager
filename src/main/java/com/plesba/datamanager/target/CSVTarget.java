@@ -27,11 +27,15 @@ public class CSVTarget {
     private String outFile;
 
     public CSVTarget(String parameterOutFilename, PipedInputStream parameterInputStream) {
+
+        System.out.println("CSVTarget started processing....... ");
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
     }
 
     public CSVTarget() {
+
+        System.out.println("CSVTarget started processing with no parameters....... ");
         inputStream = null;
         fileWriter = null;
     }
@@ -56,13 +60,13 @@ public class CSVTarget {
                     recordCount++;
                     streamRecord = recordStringBuffer.toString() + '\n';
                     fileWriter.append(streamRecord);
-                    System.out.println("Processed record: " + streamRecord);
+                    System.out.println("CSVTarget Processed record: " + streamRecord);
                     recordStringBuffer.setLength(0);
                 }
                 streamByte = inputStream.read();
 
             }
-            System.out.println("Wrote records to csv: " + recordCount);
+            System.out.println("CSVTarget finished processing....... ");
 
         } catch (IOException e) {
             e.printStackTrace();

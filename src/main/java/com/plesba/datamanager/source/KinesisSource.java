@@ -1,20 +1,18 @@
 package com.plesba.datamanager.source;
 
-
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Properties;
-import java.util.UUID;
+import java.io.PipedOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharacterCodingException;
+import java.net.InetAddress;
+import java.util.UUID;
 import java.util.List;
+import java.util.Properties;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.ClasspathPropertiesFileCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorFactory;
@@ -31,33 +29,43 @@ import com.amazonaws.services.kinesis.model.Record;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+//reads kinesis stream writes to output stream
 public class KinesisSource {
 
     private static final String DEFAULT_APP_NAME = "KinesisConsumerDefault";
-    private static final int DEFAULT_STREAMSIZE =  2;
+    private static final int DEFAULT_STREAMSIZE = 2;
     private static final String DEFAULT_STREAMNAME = "KinesisLoaderDefault";
     private static final String DEFAULT_KINESIS_ENDPOINT = "https://kinesis.us-xxxx-1.amazonaws.com";
     private static final String DEFAULT_KINESIS_REGION = "us-east-1";
     private static final InitialPositionInStream DEFAULT_INITIAL_POSITION = InitialPositionInStream.LATEST; // Position can be one of LATEST (most recent data) or TRIM_HORIZON (oldest available data)
-    private static final String DEFAULT_PARTITION_KEY = "defaultPartitionKey"
+    private static final String DEFAULT_PARTITION_KEY = "defaultPartitionKey";
 
     private static String applicationName = DEFAULT_APP_NAME;
     private static int streamSize = DEFAULT_STREAMSIZE;
     private static String streamName = DEFAULT_STREAMNAME;
     private static String kinesisEndpoint = DEFAULT_KINESIS_ENDPOINT;
     private static String kinesisRegion = DEFAULT_KINESIS_REGION;
-    private static InitialPositionInStream initialPositionInStream = DEFAULT_INITIAL_POSITION;
+    private static InitialPositionInStream initPosInStream = DEFAULT_INITIAL_POSITION;
     private static String partitionKey = DEFAULT_PARTITION_KEY;
+
+    private byte[] theByteArray = null;
+    private StringBuilder recordStringBuffer;
+    private int i=0;
+    private String nextLine = null;
+    private PipedOutputStream outputStream;
+    private int recordCount = 0;
 
     private static KinesisClientLibConfiguration kinesisClientLibConfiguration;
     private static AWSCredentialsProvider credentialsProvider = null;
     private static boolean refresh = true;
 
-    private static final Log LOG = LogFactory.getLog(KConsumer.class);
+    private static final Log LOG = LogFactory.getLog(KinesisSource.class);
 
-    private KinesisSource(Properties parameterProperties, PipedOutputStream oStream ) {
+    public KinesisSource(Properties parameterProperties, PipedOutputStream parameterOutputStream) {
 
+
+        System.out.println("KinesisSource (consumer) started processing.....");
+        outputStream = parameterOutputStream;
         String appNameOverride = parameterProperties.getProperty("kinesis.applicationname");
         if (appNameOverride != null) {
             applicationName = appNameOverride;
@@ -72,15 +80,15 @@ public class KinesisSource {
 
         String streamSizeOverride = parameterProperties.getProperty("kinesis.streamsize");
         if (streamSizeOverride != null) {
-            streamSize = streamSizeOverride;
+            streamSize = Integer.parseInt(streamSizeOverride);
         }
         LOG.info("Using stream size " + streamSize);
 
         String initialPositionInStreamOverride = parameterProperties.getProperty("kinesis.initialpositioninstream");
         if (initialPositionInStreamOverride != null) {
-            initialPositionInStream = initialPositionInStreamOverride;
+            initPosInStream = InitialPositionInStream.valueOf(initialPositionInStreamOverride);
         }
-        LOG.info("Using  name " + initialPositionInStream);
+        LOG.info("Using initial position in stream " + initPosInStream.toString());
 
         String kinesisEndpointOverride = parameterProperties.getProperty("kinesis.endpoint");
         if (kinesisEndpointOverride != null) {
@@ -94,15 +102,27 @@ public class KinesisSource {
         }
         LOG.info("Using Kinesis region " + kinesisRegion);
 
-        configure();
+        String partitionKeyOverride = parameterProperties.getProperty("kinesis.partitionkey");
+        if (partitionKeyOverride != null) {
+            partitionKey = partitionKeyOverride;
+        }
+        LOG.info("Using Kinesis partitionkey " + partitionKey);
+
+        try {
+            configure();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
- 
-    private static void configure(String propertiesFile) throws IOException {
+
+    private static void configure() throws IOException {
 
 
         // ensure the JVM will refresh the cached IP values of AWS resources (e.g. service endpoints).
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
+
+        String workerId = InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID();
         LOG.info("Using workerId: " + workerId);
 
         // Get credentials from IMDS. If unsuccessful, get them from the credential profiles file.
@@ -133,9 +153,8 @@ public class KinesisSource {
         LOG.info("Using credentials with access key id: " + credentialsProvider.getCredentials().getAWSAccessKeyId());
 
         kinesisClientLibConfiguration = new KinesisClientLibConfiguration(applicationName, streamName,
-                credentialsProvider, workerId).withInitialPositionInStream(initialPositionInStream); //.withRegionName(kinesisEndpoint);
+                credentialsProvider, workerId).withInitialPositionInStream(initPosInStream); //.withRegionName(kinesisEndpoint);
     }
-
 
 
     public void processDatafromStream() {
@@ -148,7 +167,7 @@ public class KinesisSource {
 
     private class KCRecordProcessor implements IRecordProcessor {
 
-        private static final Log LOG = LogFactory.getLog(KCRecordProcessor.class);
+        private Log LOG = LogFactory.getLog(KCRecordProcessor.class);
         private String kinesisShardId;
 
         // Backoff and retry settings
@@ -162,7 +181,7 @@ public class KinesisSource {
         private final CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
 
 
-        private kcrecordprocessor() {
+        private KCRecordProcessor() {
             super();
         }
 
@@ -170,7 +189,6 @@ public class KinesisSource {
             LOG.info("Initializing record processor for shard: " + shardId);
             this.kinesisShardId = shardId;
         }
-
 
         public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
             LOG.info("Processing " + records.size() + " records from " + kinesisShardId);
@@ -186,7 +204,6 @@ public class KinesisSource {
 
         }
 
-
         private void processRecordsWithRetries(List<Record> records) {
             for (Record record : records) {
                 boolean processedSuccessfully = false;
@@ -196,9 +213,9 @@ public class KinesisSource {
                         // For this app, we interpret the payload as UTF-8 chars.
                         data = decoder.decode(record.getData()).toString();
                         LOG.info(record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
-                        //
-                        // Logic to process record goes here.
-                        //
+
+                        putDataOnOutputStream(data);
+
                         processedSuccessfully = true;
                         break;
                     } catch (CharacterCodingException e) {
@@ -220,56 +237,73 @@ public class KinesisSource {
                     LOG.error("Couldn't process record " + record + ". Skipping the record.");
                 }
             }
-
-            private void shutdown(IRecordProcessorCheckpointer checkpointer, ShutdownReason reason) {
-                LOG.info("Shutting down record processor for shard: " + kinesisShardId);
-                // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
-                if (reason == ShutdownReason.TERMINATE) {
-                    checkpoint(checkpointer);
-                }
-            }
-
-            private void checkpoint(IRecordProcessorCheckpointer checkpointer) {
-                LOG.info("Checkpointing shard " + kinesisShardId);
-                for (int i = 0; i < NUM_RETRIES; i++) {
-                    try {
-                        checkpointer.checkpoint();
-                        break;
-                    } catch (ShutdownException se) {
-                        // Ignore checkpoint if the processor instance has been shutdown (fail over).
-                        LOG.info("Caught shutdown exception, skipping checkpoint.", se);
-                        break;
-                    } catch (ThrottlingException e) {
-                        // Backoff and re-attempt checkpoint upon transient failures
-                        if (i >= (NUM_RETRIES - 1)) {
-                            LOG.error("Checkpoint failed after " + (i + 1) + "attempts.", e);
-                            break;
-                        } else {
-                            LOG.info("Transient issue when checkpointing - attempt " + (i + 1) + " of "
-                                    + NUM_RETRIES, e);
-                        }
-                    } catch (InvalidStateException e) {
-                        // This indicates an issue with the DynamoDB table (check for table, provisioned IOPS).
-                        LOG.error("Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
-                        break;
-                    }
-                    try {
-                        Thread.sleep(BACKOFF_TIME_IN_MILLIS);
-                    } catch (InterruptedException e) {
-                        LOG.debug("Interrupted sleep", e);
-                    }
-                }
-            }
-
-            private class KCRecordProcessorFactory implements IRecordProcessorFactory {
-
-                public KCRecordProcessorFactory() {
-                    super();
-                }
-
-                public IRecordProcessor createProcessor() {
-                    return new KCRecordProcessor();
-                }
-            }
-
         }
+
+        public void shutdown(IRecordProcessorCheckpointer checkpointer, ShutdownReason reason) {
+            LOG.info("Shutting down record processor for shard: " + kinesisShardId);
+            // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
+            if (reason == ShutdownReason.TERMINATE) {
+                checkpoint(checkpointer);
+            }
+        }
+
+        public void checkpoint(IRecordProcessorCheckpointer checkpointer) {
+            LOG.info("Checkpointing shard " + kinesisShardId);
+            for (int i = 0; i < NUM_RETRIES; i++) {
+                try {
+                    checkpointer.checkpoint();
+                    break;
+                } catch (ShutdownException se) {
+                    // Ignore checkpoint if the processor instance has been shutdown (fail over).
+                    LOG.info("Caught shutdown exception, skipping checkpoint.", se);
+                    break;
+                } catch (ThrottlingException e) {
+                    // Backoff and re-attempt checkpoint upon transient failures
+                    if (i >= (NUM_RETRIES - 1)) {
+                        LOG.error("Checkpoint failed after " + (i + 1) + "attempts.", e);
+                        break;
+                    } else {
+                        LOG.info("Transient issue when checkpointing - attempt " + (i + 1) + " of "
+                                + NUM_RETRIES, e);
+                    }
+                } catch (InvalidStateException e) {
+                    // This indicates an issue with the DynamoDB table (check for table, provisioned IOPS).
+                    LOG.error("Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
+                    break;
+                }
+                try {
+                    Thread.sleep(BACKOFF_TIME_IN_MILLIS);
+                } catch (InterruptedException e) {
+                    LOG.debug("Interrupted sleep", e);
+                }
+            }
+
+            System.out.println("KinesisSource finished processing.....");
+        }
+    }
+
+    private class KCRecordProcessorFactory implements IRecordProcessorFactory {
+
+        public KCRecordProcessorFactory() {
+                    super();
+        }
+
+        public IRecordProcessor createProcessor() {
+                    return new KCRecordProcessor();
+        }
+    }
+    private void putDataOnOutputStream (String data) throws RuntimeException {
+
+        try {
+            outputStream.write(data.getBytes());
+
+            System.out.println("Writing record to piped output stream---> " + recordStringBuffer);
+
+            recordCount++;
+            recordStringBuffer.setLength(0);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
