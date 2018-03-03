@@ -31,6 +31,7 @@ public class KinesisTarget {
     private static AmazonKinesisClient kinesis;
     private KinesisProducerConfiguration config;
     List<Future<UserRecordResult>> putFutures = null;
+    private KinesisProducer kinesisProducer = null;
 
     private int recordCount;
 
@@ -159,7 +160,7 @@ public class KinesisTarget {
         System.out.println("KinesisTarget started processing ....");
         StringBuilder recordStringBuffer = new StringBuilder();
         String streamRecord = new String();
-        final KinesisProducer kinesisProducer = new KinesisProducer();
+        kinesisProducer = new KinesisProducer();
 
         putFutures = new LinkedList<Future<UserRecordResult>>();
 
@@ -174,7 +175,8 @@ public class KinesisTarget {
                     streamRecord = recordStringBuffer.toString() + '\n';
                     System.out.println("Record to put placed on stream: " + streamRecord);
                     try {
-                        putFutures.add(kinesisProducer.addUserRecord(streamName, partitionKeyName, ByteBuffer.wrap(streamRecord.getBytes("UTF-8"))));
+                      //  putFutures.add(kinesisProducer.addUserRecord(streamName, partitionKeyName, ByteBuffer.wrap(streamRecord.getBytes("UTF-8"))));
+                         kinesisProducer.addUserRecord(streamName, partitionKeyName, ByteBuffer.wrap(streamRecord.getBytes("UTF-8")));
                     } catch (UnsupportedEncodingException ex) {
                         Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -187,40 +189,39 @@ public class KinesisTarget {
                 //lines.close();
             }
 
-            System.out.println("KinesisTarget Checking futures result");
-            for (Future<UserRecordResult> f : putFutures) {
-                UserRecordResult result = f.get(); // this does block
-                if (result.isSuccessful()) {
-                    System.out.println("KinesisTarget Put record into shard " + result.getShardId());
-                } else {
-                    for (Attempt attempt : result.getAttempts()) {
-                        // Analyze and respond to the failure
-                        if (attempt.getErrorMessage() != null) {
-                            String errorMessages = attempt.getErrorMessage() + "\n";
-                            System.out.println("KinesisTarget error: " + errorMessages);
-                        }
-                    }
-                }
-            }
+         //   System.out.println("KinesisTarget Checking futures result");
+         //   for (Future<UserRecordResult> f : putFutures) {
+         //       UserRecordResult result = f.get(); // this does block
+         //       if (result.isSuccessful()) {
+         //           System.out.println("KinesisTarget Put record into shard " + result.getShardId());
+         //       } else {
+         //           for (Attempt attempt : result.getAttempts()) {
+         //               // Analyze and respond to the failure
+         //               if (attempt.getErrorMessage() != null) {
+         //                   String errorMessages = attempt.getErrorMessage() + "\n";
+         //                   System.out.println("KinesisTarget error: " + errorMessages);
+         //               }
+         //           }
+         //       }
+         //   }
 
 
-            kinesisProducer.flushSync();
-            System.out.println("KinesisTarget (Producer) flushSync completed");
+     //       stop();
 
-       // } catch(UserRecordFailedException ex){
-       //         Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
-       // } catch(UnsupportedEncodingException ex){
-       //         Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
-        } catch(InterruptedException ex){
-                Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
-        } catch(IOException ex){
-            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
-        } catch(ExecutionException ex){
+        } catch(Exception ex){
             Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        kinesisProducer.destroy();
         System.out.println("KinesisTarget (Producer) finished processing........." );
+    }
+    public void stop(){
+
+        kinesisProducer.flushSync();
+        System.out.println("KinesisTarget (Producer) flushSync completed");
+        kinesisProducer.destroy();
+
+        System.out.println("KinesisTarget (Producer) destroy completed");
+
     }
 
 }
