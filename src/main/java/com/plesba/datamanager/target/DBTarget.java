@@ -16,9 +16,9 @@ import java.util.List;
  *
  * @author renee
  *
- *   Writes to postgreSQL database.....
+ *   Reads input stream writes to PostgreSQL database
  */
-public class DBWriter {
+public class DBTarget {
 
     private final Connection connection;
     private final PipedInputStream inputStream;
@@ -27,15 +27,16 @@ public class DBWriter {
     private int recordCount = 0;
     private List<String> cols ;
 
-    public DBWriter(Connection parameterConnection, PipedInputStream parameterInputStream) {
+    public DBTarget(Connection parameterConnection, PipedInputStream parameterInputStream) {
         inputStream = parameterInputStream;
         connection = parameterConnection;
 
     }
 
-    public DBWriter() {
+    public DBTarget() {
         inputStream = null;
         connection = null;
+        System.out.println("DBTarget started...... ");
     }
 
     public void processDataFromInputStream() throws IOException {
@@ -61,7 +62,7 @@ public class DBWriter {
                         stmt.executeUpdate(); 
                         recordCount++;
                         streamRecord =recordStringBuffer.toString();
-                        System.out.println("Processed record: " + streamRecord);                       
+                        System.out.println("DBTarget Processed record: " + streamRecord);
                         recordStringBuffer.setLength(0);
                     }    
                  streamByte = inputStream.read();
@@ -69,7 +70,7 @@ public class DBWriter {
                 }
             
                 connection.commit();
-                System.out.println("Inserted records: " + recordCount);
+                System.out.println("DBTarget Processed all records from input stream; All records inserted to database: " + recordCount);
              
             }
             catch (java.sql.SQLException e) {
@@ -86,6 +87,7 @@ public class DBWriter {
 
             if (connection != null) {
 		connection.close();
+		System.out.println("DBTarget finished processing...... ");
 		}
             }
             catch (java.sql.SQLException e) {
@@ -117,9 +119,9 @@ public class DBWriter {
 
                 rowName = rs.getString("name");
                 rowCallSign = rs.getString("call_sign");
-                System.out.println("Query result: " + rowName + " - " + rowCallSign);
+                System.out.println("DBTarget query result: " + rowName + " - " + rowCallSign);
             }
-            System.out.println("Read records: " + recordCount);
+            System.out.println("DBTarget read records: " + recordCount);
 
         } catch (java.sql.SQLException e) {
             System.err.println(e);
