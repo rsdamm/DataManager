@@ -2,19 +2,12 @@ package com.plesba.datamanager.target;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.kinesis.AmazonKinesis;
-import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
-import com.amazonaws.services.kinesis.producer.*;
 import com.amazonaws.services.kinesis.model.*;
 
-import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,12 +21,13 @@ public class KinesisTarget {
 
     private final PipedInputStream inputStream;
     private DescribeStreamRequest describeStreamRequest;
-    private static AmazonKinesisClient kinesis;
-    private KinesisProducerConfiguration config;
-    List<Future<UserRecordResult>> putFutures = null;
-    private KinesisProducer kinesisProducer = null;
-
-    private int recordCount;
+    private static AmazonKinesis kinesis= null;
+    private AmazonKinesisClientBuilder clientBuilder = null;
+    private StreamDescription streamDescription = null;
+    private CreateStreamRequest createStreamRequest = null;
+    private DescribeStreamResult describeStreamResult = null;
+    private int recordCount =0;
+    private String streamStatus= null;
 
 
     private static final int DEFAULT_STREAMSIZE = 2;
@@ -51,8 +45,7 @@ public class KinesisTarget {
     public KinesisTarget(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
 
         inputStream = parameterInputStream;
-        recordCount = 0;
-        describeStreamRequest = null;
+
 
         String streamNameOverride = parameterProperties.getProperty("kinesis.streamname");
         if (streamNameOverride != null) {
@@ -78,6 +71,8 @@ public class KinesisTarget {
         }
         LOG.info("KinesisTarget using Kinesis region " + kinesisRegion);
 
+        describeStreamRequest =  new DescribeStreamRequest().withStreamName(streamName);
+        describeStreamRequest.setLimit(10);
         initializeStream(streamName);
     }
 
@@ -87,21 +82,21 @@ public class KinesisTarget {
 
     public void initializeStream(String streamName) throws InterruptedException {
 
-        AmazonKinesisClientBuilder clientBuilder = AmazonKinesisClientBuilder.standard();
+        clientBuilder = AmazonKinesisClientBuilder.standard();
         //            clientBuilder.setRegion(regionName);
         //             clientBuilder.setCredentials(credentialsProvider);
         //             clientBuilder.setClientConfiguration(config);
 
-        AmazonKinesis kinesis = clientBuilder.build();
+        kinesis = clientBuilder.build();
 
-        //create stream if it doesn't exist
-        describeStreamRequest = new DescribeStreamRequest().withStreamName(streamName);
+        //create stream if it doesn't exist; exception generated if does not exist
         try {
-            StreamDescription streamDescription = kinesis.describeStream(describeStreamRequest).getStreamDescription();
-            System.out.printf("KinesisTarget stream %s has a status of %s.\n", streamName, streamDescription.getStreamStatus());
+            streamDescription = kinesis.describeStream(describeStreamRequest).getStreamDescription();
 
+            LOG.info("\"KinesisTarget stream %s has a status of " + streamName + " "  +streamDescription.getStreamStatus());
             if ("DELETING".equals(streamDescription.getStreamStatus())) {
-                System.out.println("KinesisTarget stream is being deleted. Processing terminating: " + streamName);
+
+                LOG.info("KinesisTarget stream is being deleted. Processing terminating: " + streamName);
                 System.exit(0);
             }
 
@@ -110,10 +105,10 @@ public class KinesisTarget {
                 waitForStreamToBecomeAvailable(streamName);
             }
         } catch (ResourceNotFoundException ex) {
-            System.out.printf("KinesisTarget stream %s does not exist. Creating it now.\n", streamName);
+            LOG.info("KinesisTarget stream does not exist. Creating it now." +streamName);
 
             // Create a stream. The number of shards determines the provisioned throughput.
-            CreateStreamRequest createStreamRequest = new CreateStreamRequest();
+            createStreamRequest = new CreateStreamRequest();
             createStreamRequest.setStreamName(streamName);
             createStreamRequest.setShardCount(streamSize);
             kinesis.createStream(createStreamRequest);
@@ -124,32 +119,34 @@ public class KinesisTarget {
 
     }
 
-    private static void waitForStreamToBecomeAvailable(String streamName) throws InterruptedException {
-        System.out.printf("KinesisTarget waiting for %s to become ACTIVE...\n", streamName);
+    private void waitForStreamToBecomeAvailable(String streamName) throws InterruptedException {
 
+        LOG.info("KinesisTarget waiting for stream to become ACTIVE." + streamName);
         long startTime = System.currentTimeMillis();
         long endTime = startTime + TimeUnit.MINUTES.toMillis(10);
+
+        LOG.info("KinesisTarget waiting for to become ACTIVE..." + startTime);
+        LOG.info("KinesisTarget waiting for to become ACTIVE..." + endTime);
         while (System.currentTimeMillis() < endTime) {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(20));
 
             try {
-                DescribeStreamRequest describeStreamRequest = new DescribeStreamRequest();
-                describeStreamRequest.setStreamName(streamName);
-                // ask for no more than 10 shards at a time -- this is an optional parameter
-                describeStreamRequest.setLimit(10);
-                DescribeStreamResult describeStreamResponse = kinesis.describeStream(describeStreamRequest);
+                describeStreamResult = kinesis.describeStream(describeStreamRequest);
 
-                String streamStatus = describeStreamResponse.getStreamDescription().getStreamStatus();
-                System.out.printf("\t- KinesisTarget current state: %s\n", streamStatus);
+                streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
+
+                LOG.info("KinesisTarget current state " + streamStatus);
                 if ("ACTIVE".equals(streamStatus)) {
                     return;
                 }
             } catch (ResourceNotFoundException ex) {
                 // ResourceNotFound means the stream doesn't exist yet,
                 // so ignore this error and just keep polling.
+
+                LOG.info("KinesisTarget still waiting for stream" + streamName + "  to become ACTIVE. Will fail at "+ endTime);
             } catch (AmazonServiceException ase) {
                 throw ase;
             }
+            Thread.sleep(TimeUnit.SECONDS.toMillis(20));
         }
 
         throw new RuntimeException(String.format("KinesisTarget stream %s never became active", streamName));
@@ -157,12 +154,10 @@ public class KinesisTarget {
 
     public void processDataFromInputStream() {
 
-        System.out.println("KinesisTarget started processing ....");
+        LOG.info("KinesisTarget started stream processing " + streamName);
+
         StringBuilder recordStringBuffer = new StringBuilder();
         String streamRecord = new String();
-        kinesisProducer = new KinesisProducer();
-
-        putFutures = new LinkedList<Future<UserRecordResult>>();
 
         try {
 
@@ -173,55 +168,32 @@ public class KinesisTarget {
                     recordStringBuffer.append((char) streamByte);
                 } else { // process record
                     streamRecord = recordStringBuffer.toString() + '\n';
-                    System.out.println("Record to put placed on stream: " + streamRecord);
+
+                    LOG.info("Record to put placed on stream: " + streamRecord);
                     try {
-                      //  putFutures.add(kinesisProducer.addUserRecord(streamName, partitionKeyName, ByteBuffer.wrap(streamRecord.getBytes("UTF-8"))));
-                         kinesisProducer.addUserRecord(streamName, partitionKeyName, ByteBuffer.wrap(streamRecord.getBytes("UTF-8")));
+                         kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
                     } catch (UnsupportedEncodingException ex) {
                         Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     recordCount = recordCount + 1;
                     recordStringBuffer.setLength(0);
 
-                    System.out.println("KinesisTarget record: " + recordCount);
+                    LOG.info("KinesisTarget records written to stream: " + recordCount);
                 }
                 streamByte = inputStream.read();
-                //lines.close();
             }
 
-         //   System.out.println("KinesisTarget Checking futures result");
-         //   for (Future<UserRecordResult> f : putFutures) {
-         //       UserRecordResult result = f.get(); // this does block
-         //       if (result.isSuccessful()) {
-         //           System.out.println("KinesisTarget Put record into shard " + result.getShardId());
-         //       } else {
-         //           for (Attempt attempt : result.getAttempts()) {
-         //               // Analyze and respond to the failure
-         //               if (attempt.getErrorMessage() != null) {
-         //                   String errorMessages = attempt.getErrorMessage() + "\n";
-         //                   System.out.println("KinesisTarget error: " + errorMessages);
-         //               }
-         //           }
-         //       }
-         //   }
 
-
-     //       stop();
+            LOG.info("KinesisTarget completed ");
 
         } catch(Exception ex){
-            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+
+            LOG.error("KinesisTarget error detected in processDataFromInputStream " ,ex);
+
         }
 
-        System.out.println("KinesisTarget (Producer) finished processing........." );
+        LOG.info("KinesisTarget (Producer) finished processing");
     }
-    public void stop(){
 
-        kinesisProducer.flushSync();
-        System.out.println("KinesisTarget (Producer) flushSync completed");
-        kinesisProducer.destroy();
-
-        System.out.println("KinesisTarget (Producer) destroy completed");
-
-    }
 
 }
