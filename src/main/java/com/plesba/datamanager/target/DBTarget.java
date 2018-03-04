@@ -5,6 +5,9 @@
  */
 package com.plesba.datamanager.target;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -27,6 +30,8 @@ public class DBTarget {
     private int recordCount = 0;
     private List<String> cols ;
 
+    private static final Log LOG = LogFactory.getLog(DBTarget.class);
+
     public DBTarget(Connection parameterConnection, PipedInputStream parameterInputStream) {
         inputStream = parameterInputStream;
         connection = parameterConnection;
@@ -36,7 +41,8 @@ public class DBTarget {
     public DBTarget() {
         inputStream = null;
         connection = null;
-        System.out.println("DBTarget started...... ");
+
+        LOG.info("DBTarget finished processing");
     }
 
     public void processDataFromInputStream() throws IOException {
@@ -62,7 +68,8 @@ public class DBTarget {
                         stmt.executeUpdate(); 
                         recordCount++;
                         streamRecord =recordStringBuffer.toString();
-                        System.out.println("DBTarget Processed record: " + streamRecord);
+
+                        LOG.info("DBTarget processed "+ streamRecord);
                         recordStringBuffer.setLength(0);
                     }    
                  streamByte = inputStream.read();
@@ -70,7 +77,8 @@ public class DBTarget {
                 }
             
                 connection.commit();
-                System.out.println("DBTarget Processed all records from input stream; All records inserted to database: " + recordCount);
+
+                LOG.info("DBTarget processed all records from input stream; All records inserted to database: " + recordCount);
              
             }
             catch (java.sql.SQLException e) {
@@ -86,8 +94,8 @@ public class DBTarget {
                 }
 
             if (connection != null) {
-		connection.close();
-		System.out.println("DBTarget finished processing...... ");
+		        connection.close();
+                LOG.info("DBTarget finished processing");
 		}
             }
             catch (java.sql.SQLException e) {
@@ -120,8 +128,10 @@ public class DBTarget {
                 rowName = rs.getString("name");
                 rowCallSign = rs.getString("call_sign");
                 System.out.println("DBTarget query result: " + rowName + " - " + rowCallSign);
+
+                LOG.info("DBTarget query result" + rowName + " - " + rowCallSign);
             }
-            System.out.println("DBTarget read records: " + recordCount);
+            LOG.info("DBTarget finished processing" + recordCount);
 
         } catch (java.sql.SQLException e) {
             System.err.println(e);

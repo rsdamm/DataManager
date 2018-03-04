@@ -1,5 +1,8 @@
 package com.plesba.datamanager.utils;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.util.Properties;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,7 +13,9 @@ public class DMProperties {
 
     //Configuration config = null; 
     String propFile;
-    Properties prop; 
+    Properties prop;
+
+    private static final Log LOG = LogFactory.getLog(DMProperties.class);
 
     public DMProperties(String pfn) {
 
@@ -22,10 +27,10 @@ public class DMProperties {
             prop.load(new FileInputStream(propFile));
 
         } catch (FileNotFoundException ex) {
-            System.out.println("Error: unable to open properties");
+            LOG.info("DMProperties Error: unable to open properties");
             ex.printStackTrace();
         } catch (IOException ex) {
-            System.out.println("Error: unable to read properties file");
+            LOG.info("DMProperties Error: unable to read properties file");
             ex.printStackTrace();
         }  
       
