@@ -20,6 +20,9 @@ import java.sql.Connection;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 /**
  *
  * @author renee
@@ -40,15 +43,18 @@ public class DataManager {
         private static Properties kwProp;
         private static Properties krProp;
 
+    private static final Log LOG = LogFactory.getLog(DataManager.class);
+
     public static void main(String[] args) throws IOException {
 
-        System.out.println("DataManager starting main........");
+        LOG.info("DataManager starting main........");
 
         if (args.length == 1) {
             propertiesFile = args[0];
-            System.out.println("DataManager Properties file: " + propertiesFile);
+            LOG.info("DataManager Properties file: " + propertiesFile);
         } else {
-            System.err.println("DataManager <propertiesFile>" + "Usage: java " + DataManager.class.getName());
+
+            LOG.info("DataManager <propertiesFile>" + "Usage: java " + DataManager.class.getName());
             System.exit(1);
         }
 
@@ -61,7 +67,7 @@ public class DataManager {
         //pick a source
 
         //csvreader - read from csv file / write to output stream
-        System.out.println("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
+        LOG.info("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
         csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream1);
         new Thread(
                 new Runnable() {
@@ -71,41 +77,8 @@ public class DataManager {
                 }
         ).start();
 
-        //dbreader
-
-
-
-        //kinesis consumer reads from kinesis stream / writes to output stream
-     //   System.out.println("Selected read from Kinesis stream/write to output stream: ");
-
-     //   krProp = new Properties();
-     //   krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
-     //   krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
-     //   krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
-     //   krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
-     //   krProp.setProperty("kinesis.endpoint", dataMgrProps.getProperty("kinesis.endpoint"));
-     //   krProp.setProperty("kinesis.initialpositioninstream", dataMgrProps.getProperty("kinesis.initialpositioninstream"));
-     //   krProp.setProperty("kinesis.applicationname", dataMgrProps.getProperty("kinesis.applicationname"));
-
-     //   try {
-     //       kReader = new KinesisSource(krProp, outputStream2);
-     //       kReader.processDatafromStream();
-     //   } catch (Exception ex) {
-     //       Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
-     //   }
-
-        // pick a target
-
-        //dbwriter - read from input stream / write to db
-        // System.out.println("Selected write to database ");
-        //dbConnection = getDBConnection();
-        //connection = dbConnection.getConnection();
-        //dbLoader = new DBTarget(connection, inputStream);
-        //System.out.println("Beginning loading DB");
-        //dbLoader.processDataFromInputStream();
-
         //kinesis producer, read from input stream / write to kinesis stream (producer)
-        System.out.println("DataManager Selected write to KinesisTarget stream (producer): ");
+        LOG.info("DataManager Selected write to KinesisTarget stream (producer). ");
 
         kwProp = new Properties();
         kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
@@ -120,12 +93,7 @@ public class DataManager {
             Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        //csvwriter - read from input stream / write to csv file
-        //System.out.println("DataManager selected write to csv file: " + dataMgrProps.getProperty("outfilename"));
-        //csvWriter = new CSVTarget(dataMgrProps.getProperty("outfilename"), inputStream1);
-        //csvWriter.processDataFromInputStream();
-
-        System.out.println("DataManager Completed................");
+        LOG.info("DataManager Completed................");
     }
     public static DBConnection getDBConnection(){
     
