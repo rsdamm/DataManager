@@ -2,11 +2,11 @@
 all the data things
 
 Selects one of several data sources;
-### postreSQL
+### postgreSQL
 ### CSV file 
 ### kinesis
 
 and write to one of several data targets:
-### postreSQL
+### postgreSQL
 ### CSV file 
 ### kinesis
