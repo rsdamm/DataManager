@@ -42,6 +42,8 @@ public class DataManager {
         private static KinesisSource kReader = null;
         private static Properties kwProp;
         private static Properties krProp;
+        private static String datasource;
+        private static String datatarget;
 
     private static final Log LOG = LogFactory.getLog(DataManager.class);
 
@@ -60,59 +62,88 @@ public class DataManager {
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
 
+        datasource = dataMgrProps.getProperty("datasource");
+        datatarget = dataMgrProps.getProperty("datatarget");
+
+
+        LOG.info("DataManager datasource =  "+ datasource);
+        LOG.info("DataManager datatarget =  "+ datatarget);
+
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
 
 
-        //pick a source
+        if (datasource.equals( "stream")) {
 
-        //kinesis consumer, read from kinesis stream / write to output stream
-        LOG.info("DataManager Selected write to KinesisSource stream (consumer). ");
+            //kinesis consumer, read from kinesis stream / write to output stream
+            LOG.info("DataManager Selected write to KinesisSource stream (consumer). ");
 
-        krProp = new Properties();
-        krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
-        krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
-        krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
-        krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
+            krProp = new Properties();
+            krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
+            krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
+            krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
+            krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
 
-        try {
-            kReader = new KinesisSource(krProp, outputStream1);
-            new Thread(
+            try {
+                kReader = new KinesisSource(krProp, outputStream1);
+                new Thread(
                         new Runnable() {
                             public void run() {
-                               kReader.processData();
+                                kReader.processData();
                             }
                         }
-                    ).start();
+                ).start();
             } catch (Exception ex) {
-            Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (datasource.equals( "csv")) {
+            //csvreader - read from csv file / write to output stream
+            LOG.info("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
+            csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream1);
+            new Thread(
+                    new Runnable() {
+                        public void run() {
+                            csvSource.putDataOnOutputStream();
+                        }
+                    }
+            ).start();
+        } else if (datasource .equals( "db")) {
+            //dbsource - read from db / write to output stream
+            LOG.info("DataManager selected read db: ");
+        }
+        else {
+
+                LOG.error("DataManager no source selected see property: datasource" );
+
         }
 
-        //csvreader - read from csv file / write to output stream
-        //LOG.info("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
-        //csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream1);
-        //new Thread(
-        //        new Runnable() {
-        //           public void run() {
-        //               csvSource.putDataOnOutputStream();
-        //            }
-        //       }
-        //).start();
+        if (datatarget.equals("stream")) {
 
-        //kinesis producer, read from input stream / write to kinesis stream (producer)
-        LOG.info("DataManager Selected write to KinesisTarget stream (producer). ");
+            //kinesis producer, read from input stream / write to kinesis stream (producer)
+            LOG.info("DataManager Selected write to KinesisTarget stream (producer). ");
 
-        kwProp = new Properties();
-        kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
-        kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
-        kwProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
-        kwProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
+            kwProp = new Properties();
+            kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
+            kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
+            kwProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
+            kwProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
 
-        try {
-            kWriter = new KinesisTarget(kwProp, inputStream1);
-            kWriter.processDataFromInputStream();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+            try {
+                kWriter = new KinesisTarget(kwProp, inputStream1);
+                kWriter.processDataFromInputStream();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (datatarget.equals("db")) {
+            //db, read from input stream / write to db
+            LOG.info("DataManager selected write to db. ");
+        } else if (datatarget.equals( "csv")) {
+
+            //csv, read from input stream / write to  csv
+            LOG.info("DataManager selected write to csv. ");
+        } else {
+
+            LOG.error("DataManager no target selected see property: datatarget");
         }
 
         LOG.info("DataManager Completed................");
