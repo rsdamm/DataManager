@@ -66,16 +66,38 @@ public class DataManager {
 
         //pick a source
 
+        //kinesis consumer, read from kinesis stream / write to output stream
+        LOG.info("DataManager Selected write to KinesisSource stream (consumer). ");
+
+        krProp = new Properties();
+        krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
+        krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
+        krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
+        krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
+
+        try {
+            kReader = new KinesisSource(krProp, outputStream1);
+            new Thread(
+                        new Runnable() {
+                            public void run() {
+                               kReader.processData();
+                            }
+                        }
+                    ).start();
+            } catch (Exception ex) {
+            Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
         //csvreader - read from csv file / write to output stream
-        LOG.info("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
-        csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream1);
-        new Thread(
-                new Runnable() {
-                    public void run() {
-                        csvSource.putDataOnOutputStream();
-                    }
-                }
-        ).start();
+        //LOG.info("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
+        //csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream1);
+        //new Thread(
+        //        new Runnable() {
+        //           public void run() {
+        //               csvSource.putDataOnOutputStream();
+        //            }
+        //       }
+        //).start();
 
         //kinesis producer, read from input stream / write to kinesis stream (producer)
         LOG.info("DataManager Selected write to KinesisTarget stream (producer). ");

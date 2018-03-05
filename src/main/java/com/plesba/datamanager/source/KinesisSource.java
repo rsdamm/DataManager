@@ -128,7 +128,7 @@ public class KinesisSource {
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
 
         String workerId = InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID();
-        LOG.info("inesisSource (consumer) using workerId: " + workerId);
+        LOG.info("KinesisSource (consumer) using workerId: " + workerId);
 
         // Get credentials from IMDS. If unsuccessful, get them from the credential profiles file.
         AWSCredentialsProvider credentialsProvider = null;
@@ -158,11 +158,11 @@ public class KinesisSource {
         LOG.info("KinesisSource (consumer) Using credentials with access key id: " + credentialsProvider.getCredentials().getAWSAccessKeyId());
 
         kinesisClientLibConfiguration = new KinesisClientLibConfiguration(applicationName, streamName,
-                credentialsProvider, workerId).withInitialPositionInStream(initPosInStream); //.withRegionName(kinesisEndpoint);
+                credentialsProvider, workerId).withInitialPositionInStream(initPosInStream); 
     }
 
 
-    public void processDatafromStream() {
+    public void processData() {
 
         IRecordProcessorFactory recordProcessorFactory = new KCRecordProcessorFactory();
         Worker worker = new Worker(recordProcessorFactory, kinesisClientLibConfiguration);
@@ -302,7 +302,7 @@ public class KinesisSource {
         try {
             outputStream.write(data.getBytes());
 
-            System.out.println("KinesisSource (consumer) riting record to piped output stream---> " + recordStringBuffer);
+            System.out.println("KinesisSource (consumer) writing record to piped output stream---> " + recordStringBuffer);
 
             recordCount++;
             recordStringBuffer.setLength(0);
