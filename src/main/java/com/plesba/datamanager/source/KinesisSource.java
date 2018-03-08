@@ -217,7 +217,7 @@ public class KinesisSource {
                     try {
                         // For this app, we interpret the payload as UTF-8 chars.
                         data = decoder.decode(record.getData()).toString();
-                        LOG.info(record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
+                        LOG.info("got record from KStream: " + record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
 
                         putDataOnOutputStream(data);
 
@@ -282,8 +282,7 @@ public class KinesisSource {
                     LOG.debug("KinesisSource (consumer) Interrupted sleep", e);
                 }
             }
-
-            System.out.println("KinesisSource (consumer)  finished processing.....");
+            LOG.debug("KinesisSource (consumer) finished processing");
         }
     }
 
@@ -302,8 +301,7 @@ public class KinesisSource {
         try {
             outputStream.write(data.getBytes());
 
-            System.out.println("KinesisSource (consumer) writing record to piped output stream---> " + recordStringBuffer);
-
+            LOG.debug("KinesisSource (consumer) writing record to piped output stream---> " + recordStringBuffer);
             recordCount++;
             recordStringBuffer.setLength(0);
 

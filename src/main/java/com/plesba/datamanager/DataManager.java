@@ -6,6 +6,7 @@
 package com.plesba.datamanager;
 
 import com.plesba.datamanager.source.CSVSource;
+import com.plesba.datamanager.source.DBSource;
 import com.plesba.datamanager.target.KinesisTarget;
 import com.plesba.datamanager.target.CSVTarget;
 import com.plesba.datamanager.target.DBTarget;
@@ -31,13 +32,13 @@ public class DataManager {
     
         private static String propertiesFile = null;
         private static Properties dataMgrProps = null;
-        private static DBConnection dbConnection = null; 
+        private static DBConnection dbConnection = null;
         private static Connection connection = null;
         private static PipedOutputStream outputStream1 = null;
         private static PipedInputStream inputStream1 = null;
         private static CSVSource csvSource = null;
         private static DBTarget dbLoader = null;
-        private static CSVTarget csvWriter = null;
+        private static CSVTarget csvTarget = null;
         private static KinesisTarget kWriter = null;
         private static KinesisSource kReader = null;
         private static Properties kwProp;
@@ -62,8 +63,8 @@ public class DataManager {
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
 
-        datasource = dataMgrProps.getProperty("datasource");
-        datatarget = dataMgrProps.getProperty("datatarget");
+        datasource = dataMgrProps.getProperty("dm.datasource");
+        datatarget = dataMgrProps.getProperty("dm.datatarget");
 
 
         LOG.info("DataManager datasource =  "+ datasource);
@@ -76,7 +77,7 @@ public class DataManager {
         if (datasource.equals( "stream")) {
 
             //kinesis consumer, read from kinesis stream / write to output stream
-            LOG.info("DataManager Selected write to KinesisSource stream (consumer). ");
+            LOG.info("DataManager input from Kinesis stream (consumer). ");
 
             krProp = new Properties();
             krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
@@ -98,8 +99,8 @@ public class DataManager {
             }
         } else if (datasource.equals( "csv")) {
             //csvreader - read from csv file / write to output stream
-            LOG.info("DataManager Selected read from csv file: " + dataMgrProps.getProperty("infilename"));
-            csvSource = new CSVSource(dataMgrProps.getProperty("infilename"), outputStream1);
+            LOG.info("DataManager input from csv file: " + dataMgrProps.getProperty("csv.infilename"));
+            csvSource = new CSVSource(dataMgrProps.getProperty("csv.infilename"), outputStream1);
             new Thread(
                     new Runnable() {
                         public void run() {
@@ -109,18 +110,19 @@ public class DataManager {
             ).start();
         } else if (datasource .equals( "db")) {
             //dbsource - read from db / write to output stream
-            LOG.info("DataManager selected read db: ");
+            LOG.info("DataManager input from db: ");
+            //---->>>>>>ToDo
         }
         else {
 
-                LOG.error("DataManager no source selected see property: datasource" );
+                LOG.error("DataManager no source selected see property: dm.datasource" );
 
         }
 
         if (datatarget.equals("stream")) {
 
             //kinesis producer, read from input stream / write to kinesis stream (producer)
-            LOG.info("DataManager Selected write to KinesisTarget stream (producer). ");
+            LOG.info("DataManager output to KinesisTarget stream (producer). ");
 
             kwProp = new Properties();
             kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
@@ -136,14 +138,21 @@ public class DataManager {
             }
         } else if (datatarget.equals("db")) {
             //db, read from input stream / write to db
-            LOG.info("DataManager selected write to db. ");
-        } else if (datatarget.equals( "csv")) {
+            LOG.info("DataManager output to db. ");
 
+            dbConnection = getDBConnection();
+            connection = dbConnection.getConnection();
+
+            dbLoader = new DBTarget(connection, inputStream1);
+
+        } else if (datatarget.equals( "csv")) {
             //csv, read from input stream / write to  csv
-            LOG.info("DataManager selected write to csv. ");
+
+            LOG.info("DataManager output to csv. ");
+            csvTarget = new CSVTarget(dataMgrProps.getProperty("csv.outfilename"), inputStream1);
         } else {
 
-            LOG.error("DataManager no target selected see property: datatarget");
+            LOG.error("DataManager - no target selected see property: dm.datatarget");
         }
 
         LOG.info("DataManager Completed................");
