@@ -36,13 +36,14 @@ public class DBTarget {
         inputStream = parameterInputStream;
         connection = parameterConnection;
 
+        LOG.info("DBTarget started processing");
     }
 
     public DBTarget() {
         inputStream = null;
         connection = null;
 
-        LOG.info("DBTarget finished processing");
+        LOG.info("DBTarget started processing with no parameters");
     }
 
     public void processDataFromInputStream() throws IOException {
@@ -78,7 +79,7 @@ public class DBTarget {
             
                 connection.commit();
 
-                LOG.info("DBTarget processed all records from input stream; All records inserted to database: " + recordCount);
+                LOG.info("DBTarget processed all records from input stream; Records inserted to database: " + recordCount);
              
             }
             catch (java.sql.SQLException e) {
@@ -95,7 +96,7 @@ public class DBTarget {
 
             if (connection != null) {
 		        connection.close();
-                LOG.info("DBTarget finished processing");
+                LOG.info("DBTarget completed");
 		}
             }
             catch (java.sql.SQLException e) {
