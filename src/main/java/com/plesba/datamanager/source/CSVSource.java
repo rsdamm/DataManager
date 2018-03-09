@@ -5,6 +5,13 @@ import com.opencsv.CSVReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PipedOutputStream;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 // reads a csv file and writes to output stream
 public final class CSVSource
 {    
@@ -17,6 +24,8 @@ public final class CSVSource
     private byte[] theByteArray = null;
     private StringBuilder recordStringBuffer;
     private int i=0;
+
+    private static final Log LOG = LogFactory.getLog(CSVSource.class);
     
     public CSVSource(String rfn, PipedOutputStream parameterOutputStream ) {
        fileToRead = rfn;  
@@ -33,7 +42,7 @@ public final class CSVSource
  
     public void csvreaderSetup() {
 
-        System.out.println("CSVSource started processing.....");
+        LOG.info("CSVSource started processing.");
         try {
              //Get the CSVSource instance specifying the delimiter to be used
             reader = new com.opencsv.CSVReader(new FileReader(fileToRead),',');
@@ -65,13 +74,12 @@ public final class CSVSource
           theByteArray = recordStringBuffer.toString().getBytes();
           outputStream.write(theByteArray);
 
-          System.out.println("CSVSource Writing record to stream---> "+ recordStringBuffer);
-
+          LOG.info("CSVSource writing record to stream---> "+ recordStringBuffer);
           recordCount++;
           recordStringBuffer.setLength(0);
         }
 
-        System.out.println("CSVSource finished processing.....");
+        LOG.info("CSVSource finished processing");
         outputStream.close();
 
        } catch (IOException e) {

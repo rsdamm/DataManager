@@ -1,5 +1,9 @@
 package com.plesba.datamanager.utils;
 
+import com.plesba.datamanager.target.DBTarget;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.sql.*;
 
 public class DBConnection {
@@ -12,6 +16,8 @@ public class DBConnection {
     private final String connectString; //required
     private final String host; //required
     private final String port; //required
+
+    private static final Log LOG = LogFactory.getLog(DBConnection.class);
 
     private DBConnection(ConnectionBuilder builder) {
         this.user = builder.user;
@@ -113,7 +119,7 @@ public class DBConnection {
                 connection = DriverManager.getConnection(connectString, user, password);
                 connection.setAutoCommit(false);
             } catch (ClassNotFoundException ex) {
-                System.out.println("Error: unable to load driver class");
+                LOG.info("DBConnection error: unable to load driver class");
                 System.exit(1);
             } catch (java.sql.SQLException e) {
                 System.err.println(e);

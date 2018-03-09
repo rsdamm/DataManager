@@ -5,6 +5,9 @@
  */
 package com.plesba.datamanager.target;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -26,16 +29,18 @@ public class CSVTarget {
     private FileWriter fileWriter;
     private String outFile;
 
+    private static final Log LOG = LogFactory.getLog(CSVTarget.class);
+
     public CSVTarget(String parameterOutFilename, PipedInputStream parameterInputStream) {
 
-        System.out.println("CSVTarget started processing....... ");
+        LOG.info("CSVTarget started processing");
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
     }
 
     public CSVTarget() {
 
-        System.out.println("CSVTarget started processing with no parameters....... ");
+        LOG.info("CSVTarget started processing with no parameters");
         inputStream = null;
         fileWriter = null;
     }
@@ -60,13 +65,15 @@ public class CSVTarget {
                     recordCount++;
                     streamRecord = recordStringBuffer.toString() + '\n';
                     fileWriter.append(streamRecord);
-                    System.out.println("CSVTarget Processed record: " + streamRecord);
+
+                    LOG.info("CSVTarget Processed record: " + streamRecord);
                     recordStringBuffer.setLength(0);
                 }
                 streamByte = inputStream.read();
 
             }
-            System.out.println("CSVTarget finished processing....... ");
+
+            LOG.info("CSVTarget finished processing");
 
         } catch (IOException e) {
             e.printStackTrace();

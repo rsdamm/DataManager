@@ -62,51 +62,56 @@ public class KinesisSource {
     private static final Log LOG = LogFactory.getLog(KinesisSource.class);
 
     public KinesisSource(Properties parameterProperties, PipedOutputStream parameterOutputStream) {
+        recordStringBuffer = new StringBuilder();
 
+        LOG.info("KinesisSource (consumer) started processing.");
 
-        System.out.println("KinesisSource (consumer) started processing.....");
         outputStream = parameterOutputStream;
         String appNameOverride = parameterProperties.getProperty("kinesis.applicationname");
         if (appNameOverride != null) {
             applicationName = appNameOverride;
         }
-        LOG.info("Using application name " + applicationName);
+
+        LOG.info("KinesisSource (consumer) application name "+ applicationName);
 
         String streamNameOverride = parameterProperties.getProperty("kinesis.streamname");
         if (streamNameOverride != null) {
             streamName = streamNameOverride;
         }
-        LOG.info("Using stream name " + streamName);
+        LOG.info("KinesisSource (consumer) stream name "+ streamName);
 
         String streamSizeOverride = parameterProperties.getProperty("kinesis.streamsize");
         if (streamSizeOverride != null) {
             streamSize = Integer.parseInt(streamSizeOverride);
         }
-        LOG.info("Using stream size " + streamSize);
+
+        LOG.info("KinesisSource (consumer) streamsize "+ streamSize);
 
         String initialPositionInStreamOverride = parameterProperties.getProperty("kinesis.initialpositioninstream");
         if (initialPositionInStreamOverride != null) {
             initPosInStream = InitialPositionInStream.valueOf(initialPositionInStreamOverride);
         }
-        LOG.info("Using initial position in stream " + initPosInStream.toString());
+
+        LOG.info("KinesisSource (consumer) initial position in stream "+ initPosInStream.toString());
 
         String kinesisEndpointOverride = parameterProperties.getProperty("kinesis.endpoint");
         if (kinesisEndpointOverride != null) {
             kinesisEndpoint = kinesisEndpointOverride;
         }
-        LOG.info("Using Kinesis endpoint " + kinesisEndpoint);
+        LOG.info("KinesisSource (consumer) endpoint "+ kinesisEndpoint);
 
         String kinesisRegionOverride = parameterProperties.getProperty("kinesis.region");
         if (kinesisRegionOverride != null) {
             kinesisRegion = kinesisRegionOverride;
         }
-        LOG.info("Using Kinesis region " + kinesisRegion);
+
+        LOG.info("KinesisSource (consumer) region "+ kinesisRegion);
 
         String partitionKeyOverride = parameterProperties.getProperty("kinesis.partitionkey");
         if (partitionKeyOverride != null) {
             partitionKey = partitionKeyOverride;
         }
-        LOG.info("Using Kinesis partitionkey " + partitionKey);
+        LOG.info("KinesisSource (consumer) partitionkey " + partitionKey);
 
         try {
             configure();
@@ -123,18 +128,18 @@ public class KinesisSource {
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
 
         String workerId = InetAddress.getLocalHost().getCanonicalHostName() + ":" + UUID.randomUUID();
-        LOG.info("Using workerId: " + workerId);
+        LOG.info("KinesisSource (consumer) using workerId: " + workerId);
 
         // Get credentials from IMDS. If unsuccessful, get them from the credential profiles file.
         AWSCredentialsProvider credentialsProvider = null;
         try {
-            LOG.info("trying default aws properties for credentials");
+            LOG.info("KinesisSource (consumer) trying default aws properties for credentials");
             credentialsProvider = new ProfileCredentialsProvider();
             // Verify we can fetch credentials from the provider
             AWSCredentials credentials = credentialsProvider.getCredentials();
-            LOG.info("Obtained credentials from aws defaults.");
+            LOG.info("KinesisSource (consumer) obtained credentials from aws defaults.");
         } catch (Exception e) {
-            LOG.info("Unable to obtain credentials default aws properties", e);
+            LOG.info("KinesisSource (consumer) Unable to obtain credentials default aws properties", e);
             credentialsProvider = null;
         }
 
@@ -144,20 +149,20 @@ public class KinesisSource {
                 credentialsProvider = new InstanceProfileCredentialsProvider(refresh);
                 // Verify we can fetch credentials from the provider
                 credentialsProvider.getCredentials();
-                LOG.info("Obtained credentials from the IMDS.");
+                LOG.info("KinesisSource (consumer) Obtained credentials from the IMDS.");
             } catch (AmazonClientException e) {
-                LOG.info("Unable to obtain credentials from the IMDS", e);
+                LOG.info("KinesisSource (consumer) Unable to obtain credentials from the IMDS", e);
             }
         }
 
-        LOG.info("Using credentials with access key id: " + credentialsProvider.getCredentials().getAWSAccessKeyId());
+        LOG.info("KinesisSource (consumer) Using credentials with access key id: " + credentialsProvider.getCredentials().getAWSAccessKeyId());
 
         kinesisClientLibConfiguration = new KinesisClientLibConfiguration(applicationName, streamName,
-                credentialsProvider, workerId).withInitialPositionInStream(initPosInStream); //.withRegionName(kinesisEndpoint);
+                credentialsProvider, workerId).withInitialPositionInStream(initPosInStream); 
     }
 
 
-    public void processDatafromStream() {
+    public void processData() {
 
         IRecordProcessorFactory recordProcessorFactory = new KCRecordProcessorFactory();
         Worker worker = new Worker(recordProcessorFactory, kinesisClientLibConfiguration);
@@ -186,12 +191,12 @@ public class KinesisSource {
         }
 
         public void initialize(String shardId) {
-            LOG.info("Initializing record processor for shard: " + shardId);
+            LOG.info("KinesisSource (consumer) Initializing record processor for shard: " + shardId);
             this.kinesisShardId = shardId;
         }
 
         public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
-            LOG.info("Processing " + records.size() + " records from " + kinesisShardId);
+            LOG.info("KinesisSource (consumer) Processing " + records.size() + " records from " + kinesisShardId);
 
             // Process records and perform all exception handling.
             processRecordsWithRetries(records);
@@ -212,35 +217,35 @@ public class KinesisSource {
                     try {
                         // For this app, we interpret the payload as UTF-8 chars.
                         data = decoder.decode(record.getData()).toString();
-                        LOG.info(record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
+                        LOG.info("got record from KStream: " + record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
 
                         putDataOnOutputStream(data);
 
                         processedSuccessfully = true;
                         break;
                     } catch (CharacterCodingException e) {
-                        LOG.error("Malformed data: " + data, e);
+                        LOG.error("KinesisSource (consumer) Malformed data: " + data, e);
                         break;
                     } catch (Throwable t) {
-                        LOG.warn("Caught throwable while processing record " + record, t);
+                        LOG.warn("KinesisSource (consumer) Caught throwable while processing record " + record, t);
                     }
 
                     // backoff if we encounter an exception.
                     try {
                         Thread.sleep(BACKOFF_TIME_IN_MILLIS);
                     } catch (InterruptedException e) {
-                        LOG.debug("Interrupted sleep", e);
+                        LOG.debug("KinesisSource (consumer) Interrupted sleep", e);
                     }
                 }
 
                 if (!processedSuccessfully) {
-                    LOG.error("Couldn't process record " + record + ". Skipping the record.");
+                    LOG.error("KinesisSource (consumer) Couldn't process record " + record + ". Skipping the record.");
                 }
             }
         }
 
         public void shutdown(IRecordProcessorCheckpointer checkpointer, ShutdownReason reason) {
-            LOG.info("Shutting down record processor for shard: " + kinesisShardId);
+            LOG.info("KinesisSource (consumer) Shutting down record processor for shard: " + kinesisShardId);
             // Important to checkpoint after reaching end of shard, so we can start processing data from child shards.
             if (reason == ShutdownReason.TERMINATE) {
                 checkpoint(checkpointer);
@@ -248,37 +253,36 @@ public class KinesisSource {
         }
 
         public void checkpoint(IRecordProcessorCheckpointer checkpointer) {
-            LOG.info("Checkpointing shard " + kinesisShardId);
+            LOG.info("KinesisSource (consumer) Checkpointing shard " + kinesisShardId);
             for (int i = 0; i < NUM_RETRIES; i++) {
                 try {
                     checkpointer.checkpoint();
                     break;
                 } catch (ShutdownException se) {
                     // Ignore checkpoint if the processor instance has been shutdown (fail over).
-                    LOG.info("Caught shutdown exception, skipping checkpoint.", se);
+                    LOG.info("KinesisSource (consumer) Caught shutdown exception, skipping checkpoint.", se);
                     break;
                 } catch (ThrottlingException e) {
                     // Backoff and re-attempt checkpoint upon transient failures
                     if (i >= (NUM_RETRIES - 1)) {
-                        LOG.error("Checkpoint failed after " + (i + 1) + "attempts.", e);
+                        LOG.error("KinesisSource (consumer) Checkpoint failed after " + (i + 1) + "attempts.", e);
                         break;
                     } else {
-                        LOG.info("Transient issue when checkpointing - attempt " + (i + 1) + " of "
+                        LOG.info("KinesisSource (consumer) Transient issue when checkpointing - attempt " + (i + 1) + " of "
                                 + NUM_RETRIES, e);
                     }
                 } catch (InvalidStateException e) {
                     // This indicates an issue with the DynamoDB table (check for table, provisioned IOPS).
-                    LOG.error("Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
+                    LOG.error("KinesisSource (consumer) Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
                     break;
                 }
                 try {
                     Thread.sleep(BACKOFF_TIME_IN_MILLIS);
                 } catch (InterruptedException e) {
-                    LOG.debug("Interrupted sleep", e);
+                    LOG.debug("KinesisSource (consumer) Interrupted sleep", e);
                 }
             }
-
-            System.out.println("KinesisSource finished processing.....");
+            LOG.debug("KinesisSource (consumer) finished processing");
         }
     }
 
@@ -297,8 +301,7 @@ public class KinesisSource {
         try {
             outputStream.write(data.getBytes());
 
-            System.out.println("Writing record to piped output stream---> " + recordStringBuffer);
-
+            LOG.debug("KinesisSource (consumer) writing record to piped output stream---> " + recordStringBuffer);
             recordCount++;
             recordStringBuffer.setLength(0);
 
