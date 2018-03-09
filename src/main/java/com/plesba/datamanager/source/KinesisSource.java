@@ -62,7 +62,7 @@ public class KinesisSource {
     private static final Log LOG = LogFactory.getLog(KinesisSource.class);
 
     public KinesisSource(Properties parameterProperties, PipedOutputStream parameterOutputStream) {
-
+        recordStringBuffer = new StringBuilder();
 
         LOG.info("KinesisSource (consumer) started processing.");
 
