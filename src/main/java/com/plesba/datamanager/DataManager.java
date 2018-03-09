@@ -108,7 +108,7 @@ public class DataManager {
                         }
                     }
             ).start();
-        } else if (datasource .equals( "db")) {
+        } else if (datasource.equals( "db")) {
             //dbsource - read from db / write to output stream
             LOG.info("DataManager input from db: ");
             //---->>>>>>ToDo
