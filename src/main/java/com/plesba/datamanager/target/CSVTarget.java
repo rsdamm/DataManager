@@ -48,7 +48,7 @@ public class CSVTarget {
     public void processDataFromInputStream() throws IOException {
 
         try {
-
+            LOG.info("CSVTarget writing to "+outFile);
             fileWriter = fileWriter = new FileWriter(outFile);
 
             StringBuilder recordStringBuffer = new StringBuilder();
@@ -62,7 +62,7 @@ public class CSVTarget {
                 if (streamByte != 10) { //end of line
                     recordStringBuffer.append((char) streamByte);
                 } else { //process record
-                    recordCount++;
+                                                   recordCount++;
                     streamRecord = recordStringBuffer.toString() + '\n';
                     fileWriter.append(streamRecord);
 
@@ -73,7 +73,7 @@ public class CSVTarget {
 
             }
 
-            LOG.info("CSVTarget finished processing");
+            LOG.info("CSVTarget all records processed");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -82,6 +82,7 @@ public class CSVTarget {
 
                 fileWriter.flush();
                 fileWriter.close();
+                LOG.info(String.format("CSVTarget finished processing - records processed: %d", recordCount));
 
             } catch (IOException e) {
 
