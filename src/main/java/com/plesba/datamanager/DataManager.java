@@ -7,10 +7,10 @@ package com.plesba.datamanager;
 
 import com.plesba.datamanager.source.CSVSource;
 import com.plesba.datamanager.source.DBSource;
+import com.plesba.datamanager.source.KinesisSource;
 import com.plesba.datamanager.target.KinesisTarget;
 import com.plesba.datamanager.target.CSVTarget;
 import com.plesba.datamanager.target.DBTarget;
-import com.plesba.datamanager.source.KinesisSource;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 
@@ -38,6 +38,7 @@ public class DataManager {
         private static PipedInputStream inputStream1 = null;
         private static CSVSource csvSource = null;
         private static DBTarget dbLoader = null;
+        private static DBSource dbReader = null;
         private static CSVTarget csvTarget = null;
         private static KinesisTarget kWriter = null;
         private static KinesisSource kReader = null;
@@ -111,7 +112,11 @@ public class DataManager {
         } else if (datasource.equals( "db")) {
             //dbsource - read from db / write to output stream
             LOG.info("DataManager input from db: ");
-            //---->>>>>>ToDo
+            dbConnection = getDBConnection();
+            connection = dbConnection.getConnection();
+
+            dbReader = new DBSource(connection, outputStream1);
+            dbReader.processDataFromDB();
         }
         else {
 
@@ -144,12 +149,14 @@ public class DataManager {
             connection = dbConnection.getConnection();
 
             dbLoader = new DBTarget(connection, inputStream1);
+            dbLoader.processDataFromInputStream();
 
         } else if (datatarget.equals( "csv")) {
             //csv, read from input stream / write to  csv
 
             LOG.info("DataManager output to csv. ");
             csvTarget = new CSVTarget(dataMgrProps.getProperty("csv.outfilename"), inputStream1);
+            csvTarget.processDataFromInputStream();
         } else {
 
             LOG.error("DataManager - no target selected see property: dm.datatarget");
