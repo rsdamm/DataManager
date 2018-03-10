@@ -34,7 +34,7 @@ public class DBConnectionTest {
     private Connection connection;
     
     public DBConnectionTest() {
-        propertiesFile =  "/home/renee/git/DataManager/config.properties";
+        propertiesFile =  "/Users/renee/IdeaProjects/DataManager/config.properties";
     }
     
     @BeforeClass
@@ -101,7 +101,7 @@ public class DBConnectionTest {
             System.err.println (e); 
             e.printStackTrace();    
         }   
-         System.out.println ("DBSetupTest successful");
+         System.out.println ("DBConnectionTest successful");
         assertEquals(expDateString, dateResultString);  
     }
     public static DBConnection getDB(){

@@ -15,7 +15,7 @@ import java.util.Properties;
  */
 public class DMPropertiesTest {
     
-    private static final String propertiesFile =  "/home/renee/git/DataManager/testconfig.altproperties";
+    private static final String propertiesFile =  "/Users/renee/IdeaProjects/DataManager/testconfig.altproperties";
     private static Properties dataMgrProps = null;
     
     public DMPropertiesTest() {
