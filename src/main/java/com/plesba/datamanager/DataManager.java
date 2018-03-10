@@ -159,7 +159,7 @@ public class DataManager {
             csvTarget.processDataFromInputStream();
         } else {
 
-            LOG.error("DataManager - no target selected see property: dm.datatarget");
+            LOG.error("DataManager - no target selected - see property: dm.datatarget");
         }
 
         LOG.info("DataManager Completed................");

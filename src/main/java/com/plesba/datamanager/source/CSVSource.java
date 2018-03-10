@@ -79,7 +79,7 @@ public final class CSVSource
           recordStringBuffer.setLength(0);
         }
 
-        LOG.info("CSVSource finished processing");
+        LOG.info("CSVSource finished processing.");
         outputStream.close();
 
        } catch (IOException e) {

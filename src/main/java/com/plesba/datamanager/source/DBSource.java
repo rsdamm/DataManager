@@ -102,7 +102,7 @@ public class DBSource {
 
                 if (connection != null) {
                     connection.close();
-                    LOG.info("DBSource completed");
+                    LOG.info("DBSource completed.");
                 }
             }
             catch (java.sql.SQLException e) {

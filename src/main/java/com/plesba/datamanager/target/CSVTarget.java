@@ -73,7 +73,7 @@ public class CSVTarget {
 
             }
 
-            LOG.info("CSVTarget all records processed");
+            LOG.info("CSVTarget all records processed.");
 
         } catch (IOException e) {
             e.printStackTrace();
