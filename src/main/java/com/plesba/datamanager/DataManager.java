@@ -44,6 +44,7 @@ public class DataManager {
         private static KinesisSource kReader = null;
         private static Properties kwProp;
         private static Properties krProp;
+        private static Properties dbProp;
         private static String datasource;
         private static String datatarget;
 
@@ -100,8 +101,8 @@ public class DataManager {
             }
         } else if (datasource.equals( "csv")) {
             //csvreader - read from csv file / write to output stream
-            LOG.info("DataManager input from csv file: " + dataMgrProps.getProperty("csv.infilename"));
             csvSource = new CSVSource(dataMgrProps.getProperty("csv.infilename"), outputStream1);
+            LOG.info("DataManager input from csv file: " + csvSource);
             new Thread(
                     new Runnable() {
                         public void run() {
@@ -112,16 +113,24 @@ public class DataManager {
         } else if (datasource.equals( "db")) {
             //dbsource - read from db / write to output stream
             LOG.info("DataManager input from db: ");
-            dbConnection = getDBConnection();
+            dbProp = new Properties();
+            dbProp.setProperty("database.user", dataMgrProps.getProperty("database.user"));
+            dbProp.setProperty("database.password", dataMgrProps.getProperty("database.password"));
+            dbProp.setProperty("database.database", dataMgrProps.getProperty("database.database"));
+            dbProp.setProperty("database.port", dataMgrProps.getProperty("database.port"));
+            dbProp.setProperty("database.driver", dataMgrProps.getProperty("database.driver"));
+            dbProp.setProperty("database.host", dataMgrProps.getProperty("database.host"));
+
+            dbConnection = new DBConnection(dbProp);
             connection = dbConnection.getConnection();
 
             dbReader = new DBSource(connection, outputStream1);
             dbReader.processDataFromDB();
+            dbConnection.closeConnection();
+
         }
         else {
-
-                LOG.error("DataManager no source selected see property: dm.datasource" );
-
+                LOG.error("DataManager no source selected. See property: dm.datasource" );
         }
 
         if (datatarget.equals("stream")) {
@@ -145,11 +154,20 @@ public class DataManager {
             //db, read from input stream / write to db
             LOG.info("DataManager output to db. ");
 
-            dbConnection = getDBConnection();
+            dbProp = new Properties();
+            dbProp.setProperty("database.user", dataMgrProps.getProperty("database.user"));
+            dbProp.setProperty("database.password", dataMgrProps.getProperty("database.password"));
+            dbProp.setProperty("database.database", dataMgrProps.getProperty("database.database"));
+            dbProp.setProperty("database.port", dataMgrProps.getProperty("database.port"));
+            dbProp.setProperty("database.driver", dataMgrProps.getProperty("database.driver"));
+            dbProp.setProperty("database.host", dataMgrProps.getProperty("database.host"));
+
+            dbConnection = new DBConnection(dbProp);
             connection = dbConnection.getConnection();
 
             dbLoader = new DBTarget(connection, inputStream1);
             dbLoader.processDataFromInputStream();
+            dbConnection.closeConnection();
 
         } else if (datatarget.equals( "csv")) {
             //csv, read from input stream / write to  csv
@@ -164,16 +182,6 @@ public class DataManager {
 
         LOG.info("DataManager Completed................");
     }
-    public static DBConnection getDBConnection(){
-    
-        return new DBConnection.ConnectionBuilder()
-                .user(dataMgrProps.getProperty("database.user"))
-                .password(dataMgrProps.getProperty("database.password"))
-                .database(dataMgrProps.getProperty("database.database"))
-                .port(dataMgrProps.getProperty("database.port"))
-                .driver(dataMgrProps.getProperty("database.driver"))
-                .host(dataMgrProps.getProperty("database.host")) 
-                .build();
-    }   
+
       
 }

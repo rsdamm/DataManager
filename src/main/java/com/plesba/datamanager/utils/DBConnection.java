@@ -1,35 +1,75 @@
 package com.plesba.datamanager.utils;
 
-import com.plesba.datamanager.target.DBTarget;
+import com.plesba.datamanager.utils.DMProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import java.util.Properties;
 import java.sql.*;
 
 public class DBConnection {
 
-    Connection connection = null;
-    private final String user; //required
-    private final String password; //required
-    private final String driver;   //required
-    private final String database; //required
-    private final String connectString; //required
-    private final String host; //required
-    private final String port; //required
+    private Connection connection = null;
+    private Properties dbProperties = null;
+    private String user= null;
+    private String password= null;
+    private String driver= null;
+    private String database= null;
+    private String host= null;
+    private String port= null;
+    private String connectString= null; //generated
+    private Log LOG = LogFactory.getLog(DBConnection.class);
 
-    private static final Log LOG = LogFactory.getLog(DBConnection.class);
+    public DBConnection(Properties parameterProperties) {
 
-    private DBConnection(ConnectionBuilder builder) {
-        this.user = builder.user;
-        this.password = builder.password;
-        this.driver = builder.driver;
-        this.database = builder.database;
-        this.port = builder.port;
-        this.host = builder.host;
-        this.connectString = builder.host + ":" + builder.port + "/" + builder.database;
+        LOG.info("DBConnection setup started.");
+
+        String userOverride = parameterProperties.getProperty("database.user");
+        if(userOverride !=null) {
+            user = userOverride;
+        }
+
+        LOG.info("DBConnection user  "+user);
+
+        String passwordOverride = parameterProperties.getProperty("database.password");
+        if(passwordOverride !=null) {
+            password = passwordOverride;
+        }
+
+        LOG.info("DBConnection password  "+password);
+
+        String driverOverride = parameterProperties.getProperty("database.driver");
+        if(driverOverride !=null) {
+            driver = driverOverride;
+        }
+
+        LOG.info("DBConnection driver  "+driver);
+
+        String databaseOverride = parameterProperties.getProperty("database.database");
+        if(databaseOverride !=null)
+        {
+            database = databaseOverride;
+        }
+
+        LOG.info("DBConnection database  "+database);
+
+        String hostOverride = parameterProperties.getProperty("database.host");
+        if(hostOverride !=null) {
+            host = hostOverride;
+        }
+
+        LOG.info("DBConnection host  "+host);
+
+        String portOverride = parameterProperties.getProperty("database.port");
+        if(portOverride !=null) {
+            port = portOverride;
+        }
+
+        LOG.info("DBConnection host  "+host);
+        connectString = host + ":" + port + "/" + database;
+        LOG.info("DBConnection connect string  "+connectString);
+
         connect();
     }
-
     public String getUserName() {
         return user;
     }
@@ -58,60 +98,9 @@ public class DBConnection {
         return connectString;
     }
 
-    public static class ConnectionBuilder {
+    public Connection getConnection() {return this.connection;}
 
-        private String user;
-        private String password;
-        private String driver;
-        private String database;
-        private String connectString;
-        private String host;
-        private String port;
-
-        public ConnectionBuilder() {
-        }
-
-        public ConnectionBuilder user(String user) {
-            this.user = user;
-            return this;
-
-        }
-
-        public ConnectionBuilder password(String password) {
-            this.password = password;
-            return this;
-
-        }
-
-        public ConnectionBuilder port(String port) {
-            this.port = port;
-            return this;
-
-        }
-
-        public ConnectionBuilder database(String database) {
-            this.database = database;
-            return this;
-
-        }
-
-        public ConnectionBuilder driver(String driver) {
-            this.driver = driver;
-            return this;
-
-        }
-
-        public ConnectionBuilder host(String host) {
-            this.host = host;
-            return this;
-
-        }
-
-        public DBConnection build() {
-            return new DBConnection(this);
-        }
-   }
-        private void connect() {
+    private void connect() {
             // load the jdbc driver
             try {
                 Class.forName(driver);
@@ -125,9 +114,20 @@ public class DBConnection {
                 System.err.println(e);
                 System.exit(-1);
             }
-        }
- 
-    public Connection getConnection() {
-        return this.connection;
     }
+    public void closeConnection() {
+        // load the jdbc driver
+        try {
+
+            if (connection != null) {
+                connection.close();
+                LOG.info("DBConnection.closeConnection connection closed.");
+            }
+        }
+        catch (java.sql.SQLException e) {
+            System.err.println (e);
+            e.printStackTrace();
+        }
+    }
+
 }

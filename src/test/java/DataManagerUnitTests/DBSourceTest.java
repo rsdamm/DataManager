@@ -1,19 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package DataManagerUnitTests;
 
- 
 import com.plesba.datamanager.DataManager;
 import com.plesba.datamanager.source.CSVSource;
+import com.plesba.datamanager.source.DBSource;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.util.Properties;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -21,39 +17,37 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+
+import com.plesba.datamanager.utils.DBConnection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+public class DBSourceTest {
 
-/**
- *
- * @author REnee
- */
-public class CSVSourceTest {
     private static PipedOutputStream outputStream1 = null;
     private static PipedInputStream inputStream1 = null;
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
-    private static CSVSource csvSource = null;
+    private static Properties dbProp = null;
     private long recordCount = 0;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
-    private static String csvFilename;
-    private static Properties dataMgrProps = null;
+    private static DBSource dbReader = null;
+    private static DBConnection dbConnection = null;
+    private static Connection connection = null;
 
-    private static Properties dbProp;
-    public CSVSourceTest() {
+    public DBSourceTest() {
     }
-    
+
     @BeforeClass
     public static void setUpClass() {
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
-    
+
     @Before
     public void setUp() {
     }
-    
+
     @After
     public void tearDown() {
     }
@@ -64,30 +58,32 @@ public class CSVSourceTest {
      */
     @Test
     public void testRun() throws IOException {
-        
 
-        LOG.info("CSVSourceTest starting");
 
-        dataMgrProps = new DMProperties(propertiesFile).getProp();
-        LOG.info("CVSourceTest properties obtained");
+        System.out.println("DBSourceTest starting");
+
+        dbProp = new DMProperties(propertiesFile).getProp();
+        LOG.info("DBSourceTest properties obtained");
 
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
-        csvFilename = dataMgrProps.getProperty("csv.infilename");
-        LOG.info("CSVSourceTest input from DB file: " + csvFilename);
 
-        csvSource = new CSVSource(csvFilename, outputStream1);
-        csvSource.putDataOnOutputStream();
+        dbConnection = new DBConnection(dbProp);
+        connection = dbConnection.getConnection();
 
-        recordCount = Files.lines(Paths.get(csvFilename)).count();
-        LOG.info("CSVSourceTest Input file record count : " + recordCount);
-        
-        int result = csvSource.getReadCount();
-        LOG.info("CSVSourceTest Loaded " + result + " records");
+        dbReader = new DBSource(connection, outputStream1);
+        dbReader.processDataFromDB();
 
-        LOG.info("CSVSourceTest Stream written count: " + result);
+        recordCount = dbReader.getRecordCountInTable();
+        LOG.info("DBSourceTest record count : " + recordCount);
+
+        int result = dbReader.GetQueryResultCount();
+        LOG.info("DBSourceTest records read from table " + result);
+
+        LOG.info("DBSourceTest records in table " + recordCount);
+
         assertEquals(recordCount, result);
-        LOG.info("CSVSourceTest completed");
+        LOG.info("DBSourceTest completed");
     }
-    
+
 }

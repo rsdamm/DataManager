@@ -29,6 +29,7 @@ public class DBTarget {
     private PreparedStatement stmt = null;
     private int recordCount = 0;
     private List<String> cols ;
+    private int tableRecordCount=0;
 
     private static final Log LOG = LogFactory.getLog(DBTarget.class);
 
@@ -48,95 +49,106 @@ public class DBTarget {
 
     public void processDataFromInputStream() throws IOException {
 
-        try { 
+        try {
 
-            
-            StringBuilder recordStringBuffer = new StringBuilder(); 
+            StringBuilder recordStringBuffer = new StringBuilder();
             String streamRecord = new String();
             stmt = connection.prepareStatement(insert_dml);
             //Read one line at a time
 
             int streamByte = inputStream.read();
 
-            while (streamByte != -1) {  
-                                        
-                    if (streamByte != 10) {
-                        recordStringBuffer.append((char) streamByte);
-                    } else {
-                        cols = Arrays.asList(recordStringBuffer.toString().split(","));
-                        stmt.setString(1, cols.get(0));
-                        stmt.setString(2, cols.get(1));
-                        stmt.executeUpdate(); 
-                        recordCount++;
-                        streamRecord =recordStringBuffer.toString();
+            while (streamByte != -1) {
 
-                        LOG.info("DBTarget processed "+ streamRecord);
-                        recordStringBuffer.setLength(0);
-                    }    
-                 streamByte = inputStream.read();
+                if (streamByte != 10) {
+                    recordStringBuffer.append((char) streamByte);
+                } else {
+                    cols = Arrays.asList(recordStringBuffer.toString().split(","));
+                    stmt.setString(1, cols.get(0));
+                    stmt.setString(2, cols.get(1));
+                    stmt.executeUpdate();
+                    recordCount++;
+                    streamRecord = recordStringBuffer.toString();
 
+                    LOG.info("DBTarget processed " + streamRecord);
+                    recordStringBuffer.setLength(0);
                 }
-            
-                connection.commit();
+                streamByte = inputStream.read();
 
-                LOG.info("DBTarget processed all records from input stream; Records inserted to database: " + recordCount);
-             
             }
-            catch (java.sql.SQLException e) {
-            System.err.println (e);
+
+            connection.commit();
+
+            LOG.info("DBTarget processed all records from input stream; Records inserted to database: " + recordCount);
+
+        } catch (java.sql.SQLException e) {
+            System.err.println(e);
             e.printStackTrace();
         }
-            //close the connection
-            finally {
+
+        //close the connection
+        finally {
 
             try {
                 if (stmt != null) {
                     stmt.close();
                 }
 
-            if (connection != null) {
-		        connection.close();
-                LOG.info("DBTarget completed");
-		}
+            } catch (java.sql.SQLException e) {
+                System.err.println(e);
+                e.printStackTrace();
             }
-            catch (java.sql.SQLException e) {
-            System.err.println (e);
-            e.printStackTrace();
         }
-            
-	}
-        }
-    
+    }
 
-    public int GetLoadedCount() {
+    public int GetRecordCountInsertedInDB() {
         return this.recordCount;
     }
 
-    public void getRecords() {
-        String rowName = null;
-        String rowCallSign = null;
+    public int getRecordCountInTable() throws IOException {
 
         try {
 
-            String query = "SELECT name, call_sign FROM ham_call_signs";
-            // execute query
-            Statement statement = connection.createStatement();
-            ResultSet rs = statement.executeQuery(query);
+            LOG.info("DBTarget.getRecordCountInTable starting " + recordCount);
+            try {
 
-            // return query result
-            while (rs.next()) {
+                String query = "SELECT count(*) as record_count FROM ham_call_signs";
+                // execute query
+                Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery(query);
 
-                rowName = rs.getString("name");
-                rowCallSign = rs.getString("call_sign");
-                System.out.println("DBTarget query result: " + rowName + " - " + rowCallSign);
+                // return query result
+                while (rs.next()) {
 
-                LOG.info("DBTarget query result" + rowName + " - " + rowCallSign);
+                    tableRecordCount = Integer.parseInt(rs.getString("record_count"));
+
+                }
+                LOG.info("DBTarget.getRecordCountInTable finished processing " + recordCount);
+
+
+            } catch (java.sql.SQLException e) {
+                System.err.println(e);
+                e.printStackTrace();
             }
-            LOG.info("DBTarget finished processing" + recordCount);
 
-        } catch (java.sql.SQLException e) {
+
+        } catch (Exception e) {
             System.err.println(e);
             e.printStackTrace();
+        }
+        //cleanup
+        finally {
+
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+
+            } catch (java.sql.SQLException e) {
+                System.err.println(e);
+                e.printStackTrace();
+            }
+            return this.tableRecordCount;
         }
     }
 }
