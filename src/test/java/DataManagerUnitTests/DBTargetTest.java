@@ -91,6 +91,8 @@ public class DBTargetTest {
  
         LOG.info("CSVSourceTest Input file record count : " + recordCountAfter);
 
+        dbConnection.closeConnection();
+
         assertEquals(dbRecordCountAfter - dbrecordCountBefore, csvRecordCount);
         LOG.info("DBTargetTest completed");
     }

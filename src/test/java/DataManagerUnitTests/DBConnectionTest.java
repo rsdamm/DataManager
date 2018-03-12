@@ -109,6 +109,8 @@ public class DBConnectionTest {
             e.printStackTrace();    
         }
         LOG.info("DBConnectionTest successful");
+
+        dbConnection.closeConnection();
         assertEquals(expDateString, dateResultString);  
     }
 
