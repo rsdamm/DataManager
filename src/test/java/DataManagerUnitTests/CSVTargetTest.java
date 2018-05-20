@@ -85,11 +85,11 @@ public class CSVTargetTest {
         recordCountIn = Files.lines(Paths.get(csvInfilename)).count();
         LOG.info("CSVTargetTest Input file record count : " + recordCountIn);
 
-        csvTarget = new CSVTarget(csvInfilename, inputStream1);
+        csvTarget = new CSVTarget(csvOutfilename, inputStream1);
         csvTarget.processDataFromInputStream();
 
-        recordCountOut = Files.lines(Paths.get(csvInfilename)).count();
-        LOG.info("CSVTargetTest out file record count : " + recordCountOut);
+        recordCountOut = Files.lines(Paths.get(csvOutfilename)).count();
+        LOG.info("CSVTargetTest output file record count : " + recordCountOut);
 
         assertEquals(recordCountIn, recordCountOut);
         LOG.info("CSVTargetTest completed");

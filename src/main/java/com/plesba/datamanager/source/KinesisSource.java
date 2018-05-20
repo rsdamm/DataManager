@@ -167,6 +167,13 @@ public class KinesisSource {
         IRecordProcessorFactory recordProcessorFactory = new KCRecordProcessorFactory();
         Worker worker = new Worker(recordProcessorFactory, kinesisClientLibConfiguration);
         worker.run();
+        worker.shutdown();
+        try {
+            outputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
 
     }
 
@@ -217,7 +224,7 @@ public class KinesisSource {
                     try {
                         // For this app, we interpret the payload as UTF-8 chars.
                         data = decoder.decode(record.getData()).toString();
-                        LOG.info("got record from KStream: " + record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
+                        LOG.info("KinesisSource (consumer) got record from KStream: " + record.getSequenceNumber() + ", " + record.getPartitionKey() + ", " + data);
 
                         putDataOnOutputStream(data);
 

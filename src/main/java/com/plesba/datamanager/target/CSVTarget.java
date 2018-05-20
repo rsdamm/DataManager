@@ -36,6 +36,8 @@ public class CSVTarget {
         LOG.info("CSVTarget started processing");
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
+
+        LOG.info("CSVTarget outputFile as set in constructor "+outFile);
     }
 
     public CSVTarget() {

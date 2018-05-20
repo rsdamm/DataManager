@@ -163,13 +163,13 @@ public class KinesisTarget {
 
             int streamByte = inputStream.read();
 
-            while (streamByte != -1) { //end of stream
+            while (streamByte != -1) {   //end of stream
                 if (streamByte != 10) {  //end of line
                     recordStringBuffer.append((char) streamByte);
                 } else { // process record
                     streamRecord = recordStringBuffer.toString() + '\n';
 
-                    LOG.info("Record to put placed on stream: " + streamRecord);
+                    LOG.info("KinesisTarget Record to put placed on stream: " + streamRecord);
                     try {
                          kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
                     } catch (UnsupportedEncodingException ex) {
@@ -182,8 +182,7 @@ public class KinesisTarget {
                 }
                 streamByte = inputStream.read();
             }
-
-
+            kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
             LOG.info("KinesisTarget completed ");
 
         } catch(Exception ex){

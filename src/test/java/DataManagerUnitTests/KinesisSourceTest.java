@@ -86,7 +86,7 @@ public class KinesisSourceTest {
         csvFilenameIn = dataMgrProps.getProperty("csv.infilename");
 
         csvSource = new CSVSource(csvFilenameIn, outputStream1);
-        LOG.info("KinesisSourceTest starting CSVReader: " + csvFilenameIn);
+        LOG.info("CSVSource starting CSVSource: " + csvFilenameIn);
 
         new Thread(
                 new Runnable() {
@@ -108,7 +108,13 @@ public class KinesisSourceTest {
 
         try {
             kWriter = new KinesisTarget(kwProp, inputStream1);
-            kWriter.processDataFromInputStream();
+            new Thread(
+                    new Runnable() {
+                        public void run() {
+                            kWriter.processDataFromInputStream();
+                        }
+                    }
+            ).start();
         } catch (InterruptedException ex) {
             Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }

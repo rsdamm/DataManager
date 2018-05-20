@@ -59,7 +59,7 @@ public class DBSource {
 
                     rowName = rs.getString("name");
                     rowCallSign = rs.getString("call_sign");
-                    LOG.info("DBSource query result" + rowName + " - " + rowCallSign);
+                    LOG.info("DBSource query result: " + rowName + " - " + rowCallSign);
 
                     dbRecord = rowName + ',' + rowCallSign ;
                     nextLine = dbRecord.split(" ") ;
