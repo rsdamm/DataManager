@@ -36,7 +36,7 @@ public class KinesisSource {
     private static final int DEFAULT_STREAMSIZE = 2;
     private static final String DEFAULT_STREAMNAME = "KinesisLoaderDefault";
     private static final String DEFAULT_KINESIS_ENDPOINT = "https://kinesis.us-xxxx-1.amazonaws.com";
-    private static final String DEFAULT_KINESIS_REGION = "us-east-1";
+    private static final String DEFAULT_KINESIS_REGION = "us-xxxx-1";
     private static final InitialPositionInStream DEFAULT_INITIAL_POSITION = InitialPositionInStream.LATEST; // Position can be one of LATEST (most recent data) or TRIM_HORIZON (oldest available data)
     private static final String DEFAULT_PARTITION_KEY = "defaultPartitionKey";
 

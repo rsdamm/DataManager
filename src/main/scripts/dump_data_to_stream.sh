@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SN="KinesisDBLoader1"
+SN="KinesisDBLoader2"
 PK="partitionkey1"
 RC="record dump to stream----->>>>>: " # make this record whatever string you want,no whitespace
 counter=0

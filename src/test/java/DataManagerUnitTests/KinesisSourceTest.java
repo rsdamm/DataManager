@@ -127,7 +127,9 @@ public class KinesisSourceTest {
         krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
         krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
         krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
-
+        krProp.setProperty("kinesis.initialpositioninstream", dataMgrProps.getProperty("kinesis.initialpositioninstream"));
+        krProp.setProperty("kinesis.applicationname", dataMgrProps.getProperty("kinesis.applicationname"));
+        krProp.setProperty("kinesis.endpoint", dataMgrProps.getProperty("kinesis.endpoint"));
 
         try {
             kReader = new KinesisSource(krProp, outputStream2);
