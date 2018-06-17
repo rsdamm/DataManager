@@ -27,14 +27,15 @@ import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.ShutdownReason;
 import com.amazonaws.services.kinesis.model.Record;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 //reads kinesis stream writes to output stream
 public class KinesisSource {
 
     private static final String DEFAULT_APP_NAME = "KinesisConsumerDefault";
     private static final int DEFAULT_STREAMSIZE = 2;
+    private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = -1;
     private static final String DEFAULT_STREAMNAME = "KinesisLoaderDefault";
     private static final String DEFAULT_KINESIS_ENDPOINT = "https://kinesis.us-xxxx-1.amazonaws.com";
     private static final String DEFAULT_KINESIS_REGION = "us-xxxx-1";
@@ -48,6 +49,7 @@ public class KinesisSource {
     private static String kinesisRegion = DEFAULT_KINESIS_REGION;
     private static InitialPositionInStream initPosInStream = DEFAULT_INITIAL_POSITION;
     private static String partitionKey = DEFAULT_PARTITION_KEY;
+    private static Integer maxRecordsToProcess = DEFAULT_MAX_RECORDS_TO_PROCESS;
 
     private byte[] theByteArray = null;
     private StringBuilder recordStringBuffer;
@@ -55,6 +57,7 @@ public class KinesisSource {
     private String nextLine = null;
     private PipedOutputStream outputStream;
     private int recordCount = 0;
+    private boolean stopProcessing=false;
 
     private static KinesisClientLibConfiguration kinesisClientLibConfiguration;
     private static AWSCredentialsProvider credentialsProvider = null;
@@ -112,7 +115,15 @@ public class KinesisSource {
         if (partitionKeyOverride != null) {
             partitionKey = partitionKeyOverride;
         }
+
         LOG.info("KinesisSource (consumer) partitionkey " + partitionKey);
+
+        String maxRecordsToProcessOverride = parameterProperties.getProperty("kinesis.maxrecordstoprocess");
+        if (maxRecordsToProcessOverride != null) {
+            maxRecordsToProcess = Integer.parseInt(maxRecordsToProcessOverride);
+
+        }
+        LOG.info("KinesisSource (consumer) maxRecordsToProcess " + maxRecordsToProcess);
 
         try {
             configure();
@@ -179,7 +190,7 @@ public class KinesisSource {
 
     }
 
-    private class KCRecordProcessor implements IRecordProcessor, IShutdownNotificationAware {
+    private class KCRecordProcessor implements IRecordProcessor  {
 
         private Log LOG = LogFactory.getLog(KCRecordProcessor.class);
         private String kinesisShardId;
@@ -199,13 +210,6 @@ public class KinesisSource {
             super();
         }
 
-        public void shutdownRequested(IRecordProcessorCheckpointer checkpointer) {
-
-
-        }
-
-
-
         public void initialize(String shardId) {
             LOG.info("KinesisSource (consumer) Initializing record processor for shard: " + shardId);
             this.kinesisShardId = shardId;
@@ -219,11 +223,19 @@ public class KinesisSource {
 
             // Checkpoint once every checkpoint interval.
             if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
-                checkpoint(checkpointer);
+                try {
+                    checkpointer.checkpoint();
+                } catch (InvalidStateException e) {
+                    e.printStackTrace();
+                } catch (ShutdownException e) {
+                    e.printStackTrace();
+                }
                 nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
             }
 
+
         }
+
 
         private void processRecordsWithRetries(List<Record> records) {
             for (Record record : records) {
@@ -257,6 +269,9 @@ public class KinesisSource {
                 if (!processedSuccessfully) {
                     LOG.error("KinesisSource (consumer) Couldn't process record " + record + ". Skipping the record.");
                 }
+                if (stopProcessing) {
+                    LOG.info("KinesisSource (consumer) hit max number of records to process - shutting down");
+                    break;}
             }
         }
 
@@ -319,6 +334,12 @@ public class KinesisSource {
 
             LOG.debug("KinesisSource (consumer) writing record to piped output stream---> " + recordStringBuffer);
             recordCount++;
+
+            if (recordCount >= maxRecordsToProcess & maxRecordsToProcess > -1) {
+                LOG.info("KinesisSource (consumer) max records to process exceeded shutting down");
+                stopProcessing = true;
+            }
+
             recordStringBuffer.setLength(0);
 
         } catch (IOException e) {

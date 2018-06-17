@@ -96,6 +96,7 @@ public class KinesisTargetTest {
         kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
         kwProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
         kwProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
+        kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
 
         try {
             kWriter = new KinesisTarget(kwProp, inputStream1);

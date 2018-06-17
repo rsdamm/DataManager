@@ -34,12 +34,15 @@ public class KinesisTarget {
     private static final String DEFAULT_STREAMNAME = "KinesisLoaderDefault";
     private static final String DEFAULT_KINESIS_REGION = "us-east-1";
     private static final String DEFAULT_PARTITION_KEY = "defaultPartitionKey";
+    private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = -1;
 
     private static Integer streamSize = DEFAULT_STREAMSIZE;
     private static String streamName = DEFAULT_STREAMNAME;
     private static String kinesisRegion = DEFAULT_KINESIS_REGION;
     private static String partitionKeyName = DEFAULT_PARTITION_KEY;
+    private static Integer maxRecordsToProcess = DEFAULT_MAX_RECORDS_TO_PROCESS;
 
+    private boolean stopProcessing=false;
     private static final Log LOG = LogFactory.getLog(KinesisTarget.class);
 
     public KinesisTarget(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
@@ -71,10 +74,20 @@ public class KinesisTarget {
         }
         LOG.info("KinesisTarget using Kinesis region " + kinesisRegion);
 
+        String maxRecordsToProcessOverride = parameterProperties.getProperty("kinesis.maxrecordstoprocess");
+        if (maxRecordsToProcessOverride != null) {
+            maxRecordsToProcess = Integer.parseInt(maxRecordsToProcessOverride);
+
+        }
+        LOG.info("KinesisTarget using maxRecordsToProcess " + maxRecordsToProcess);
+
+
         describeStreamRequest =  new DescribeStreamRequest().withStreamName(streamName);
         describeStreamRequest.setLimit(10);
         initializeStream(streamName);
+
     }
+
 
     public int GetLoadedCount() {
         return this.recordCount;
@@ -163,7 +176,7 @@ public class KinesisTarget {
 
             int streamByte = inputStream.read();
 
-            while (streamByte != -1) {   //end of stream
+            while (streamByte != -1 & !stopProcessing) {   //end of stream
                 if (streamByte != 10) {  //end of line
                     recordStringBuffer.append((char) streamByte);
                 } else { // process record
@@ -177,11 +190,16 @@ public class KinesisTarget {
                     }
                     recordCount = recordCount + 1;
                     recordStringBuffer.setLength(0);
+                    if (recordCount >= maxRecordsToProcess & maxRecordsToProcess > -1 ){ stopProcessing = true;}
 
                     LOG.info("KinesisTarget records written to stream: " + recordCount);
                 }
+
+
                 streamByte = inputStream.read();
             }
+
+
             kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
             LOG.info("KinesisTarget completed processed "+ recordCount + " records.");
 
