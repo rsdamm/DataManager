@@ -183,7 +183,7 @@ public class KinesisTarget {
                 streamByte = inputStream.read();
             }
             kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
-            LOG.info("KinesisTarget completed ");
+            LOG.info("KinesisTarget completed processed "+ recordCount + " records.");
 
         } catch(Exception ex){
 

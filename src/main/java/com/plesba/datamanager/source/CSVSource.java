@@ -81,7 +81,7 @@ public final class CSVSource
 
         outputStream.close();
 
-        LOG.info("CSVSource finished processing.");
+        LOG.info("CSVSource finished processing "+ recordCount +" records");
 
        } catch (IOException e) {
                     throw new RuntimeException(e);

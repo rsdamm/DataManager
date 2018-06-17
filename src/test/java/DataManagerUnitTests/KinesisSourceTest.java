@@ -141,6 +141,7 @@ public class KinesisSourceTest {
                     }
             ).start();
         } catch (Exception ex) {
+
             Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
         }
         //csv, read from input stream / write to  csv

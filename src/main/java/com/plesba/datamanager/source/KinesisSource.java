@@ -16,6 +16,7 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorFactory;
+import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IShutdownNotificationAware;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
@@ -169,6 +170,7 @@ public class KinesisSource {
         worker.run();
         worker.shutdown();
         try {
+            LOG.info("KinesisSource (consumer) closing output stream");
             outputStream.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -177,7 +179,7 @@ public class KinesisSource {
 
     }
 
-    private class KCRecordProcessor implements IRecordProcessor {
+    private class KCRecordProcessor implements IRecordProcessor, IShutdownNotificationAware {
 
         private Log LOG = LogFactory.getLog(KCRecordProcessor.class);
         private String kinesisShardId;
@@ -196,6 +198,13 @@ public class KinesisSource {
         private KCRecordProcessor() {
             super();
         }
+
+        public void shutdownRequested(IRecordProcessorCheckpointer checkpointer) {
+
+
+        }
+
+
 
         public void initialize(String shardId) {
             LOG.info("KinesisSource (consumer) Initializing record processor for shard: " + shardId);
