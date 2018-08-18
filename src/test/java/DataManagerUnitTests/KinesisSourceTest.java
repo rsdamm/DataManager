@@ -38,6 +38,8 @@ public class KinesisSourceTest {
     private static CSVTarget csvTarget = null;
     private long recordCountCSVIn = 0;
     private long recordCountCSVOut = 0;
+    private long maxRecordsToProcess =3;
+    private long maxrecordstoprocess = 0;
     private static KinesisTarget kWriter = null;
     private static KinesisSource kReader = null;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
@@ -105,7 +107,8 @@ public class KinesisSourceTest {
         kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
         kwProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
         kwProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
-        kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
+        // kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
+        kwProp.setProperty("kinesis.maxrecordstoprocess", String.valueOf(maxRecordsToProcess));
 
         try {
             kWriter = new KinesisTarget(kwProp, inputStream1);
@@ -127,11 +130,12 @@ public class KinesisSourceTest {
         krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
         krProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
         krProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
-        krProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
+        krProp.setProperty("kinesis. partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
         krProp.setProperty("kinesis.initialpositioninstream", dataMgrProps.getProperty("kinesis.initialpositioninstream"));
         krProp.setProperty("kinesis.applicationname", dataMgrProps.getProperty("kinesis.applicationname"));
         krProp.setProperty("kinesis.endpoint", dataMgrProps.getProperty("kinesis.endpoint"));
-        krProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
+        //krProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
+        krProp.setProperty("kinesis.maxrecordstoprocess", String.valueOf(maxRecordsToProcess));
 
         try {
             kReader = new KinesisSource(krProp, outputStream2);
@@ -154,7 +158,7 @@ public class KinesisSourceTest {
 
         recordCountCSVOut = Files.lines(Paths.get(csvFilenameOut)).count();
 
-        assertEquals(recordCountCSVIn, recordCountCSVOut);
+        assertEquals(maxRecordsToProcess, recordCountCSVOut);
         LOG.info("KinesisSourceTest completed");
     }
 

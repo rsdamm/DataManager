@@ -34,6 +34,7 @@ public class KinesisTargetTest {
     private static CSVSource csvSource = null; 
     private long recordCountCSVIn = 0;
     private long recordCountStreamOut = 0;
+    private long maxStreamCount = 0;
     private static KinesisTarget kWriter = null; 
     private static final Log LOG = LogFactory.getLog(DataManager.class);
     private static String csvFilenameIn; 
@@ -106,8 +107,18 @@ public class KinesisTargetTest {
         } catch (InterruptedException ex) {
             Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        assertEquals(recordCountCSVIn, recordCountStreamOut);
+
+        maxStreamCount =  Integer.parseInt(dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
+        if (maxStreamCount >0)
+        {
+            assertEquals(maxStreamCount, recordCountStreamOut);
+        }
+        else {
+
+            assertEquals(recordCountCSVIn, recordCountStreamOut);
+        }
+
+
         LOG.info("KinesisTargetTest completed");
     }
 

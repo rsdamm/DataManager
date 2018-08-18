@@ -180,13 +180,6 @@ public class KinesisSource {
         Worker worker = new Worker(recordProcessorFactory, kinesisClientLibConfiguration);
         worker.run();
         worker.shutdown();
-        try {
-            LOG.info("KinesisSource (consumer) closing output stream");
-            outputStream.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
 
     }
 
@@ -219,7 +212,11 @@ public class KinesisSource {
             LOG.info("KinesisSource (consumer) Processing " + records.size() + " records from " + kinesisShardId);
 
             // Process records and perform all exception handling.
-            processRecordsWithRetries(records);
+            try {
+                processRecordsWithRetries(records);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             // Checkpoint once every checkpoint interval.
             if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
@@ -237,7 +234,7 @@ public class KinesisSource {
         }
 
 
-        private void processRecordsWithRetries(List<Record> records) {
+        private void processRecordsWithRetries(List<Record> records) throws IOException {
             for (Record record : records) {
                 boolean processedSuccessfully = false;
                 String data = null;
@@ -270,8 +267,16 @@ public class KinesisSource {
                     LOG.error("KinesisSource (consumer) Couldn't process record " + record + ". Skipping the record.");
                 }
                 if (stopProcessing) {
-                    LOG.info("KinesisSource (consumer) hit max number of records to process - shutting down");
-                    break;}
+                    LOG.info("KinesisSource (consumer) hit max number of records to process - gracefully shutting down");
+
+                    try {
+                        LOG.info("KinesisSource (consumer) closing output stream");
+                        outputStream.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    break;
+                }
             }
         }
 
@@ -336,7 +341,7 @@ public class KinesisSource {
             recordCount++;
 
             if (recordCount >= maxRecordsToProcess & maxRecordsToProcess > -1) {
-                LOG.info("KinesisSource (consumer) max records to process exceeded shutting down");
+                LOG.info("KinesisSource (consumer) max records to process limit achieved");
                 stopProcessing = true;
             }
 
