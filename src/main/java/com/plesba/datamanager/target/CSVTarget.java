@@ -17,10 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author renee
- *
- *   Writes to csv file
+ * <p>
+ * Writes to csv file
  */
 public class CSVTarget {
 
@@ -36,6 +35,8 @@ public class CSVTarget {
         LOG.info("CSVTarget started processing");
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
+
+        LOG.info("CSVTarget outputFile as set in constructor " + outFile);
     }
 
     public CSVTarget() {
@@ -48,7 +49,7 @@ public class CSVTarget {
     public void processDataFromInputStream() throws IOException {
 
         try {
-
+            LOG.info("CSVTarget writing to " + outFile);
             fileWriter = fileWriter = new FileWriter(outFile);
 
             StringBuilder recordStringBuffer = new StringBuilder();
@@ -57,11 +58,13 @@ public class CSVTarget {
 
             int streamByte = inputStream.read();
 
-            while (streamByte != -1) {  //end of stream
-
-                if (streamByte != 10) { //end of line
+            while (streamByte != -1) {
+                /* until end of stream */
+                if (streamByte != 10) {
+                    //end of line
                     recordStringBuffer.append((char) streamByte);
-                } else { //process record
+                } else {
+                    /* process record */
                     recordCount++;
                     streamRecord = recordStringBuffer.toString() + '\n';
                     fileWriter.append(streamRecord);
@@ -73,7 +76,7 @@ public class CSVTarget {
 
             }
 
-            LOG.info("CSVTarget finished processing");
+            LOG.info("CSVTarget all records processed.");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -82,6 +85,7 @@ public class CSVTarget {
 
                 fileWriter.flush();
                 fileWriter.close();
+                LOG.info(String.format("CSVTarget finished processing - records processed: %d", recordCount));
 
             } catch (IOException e) {
 

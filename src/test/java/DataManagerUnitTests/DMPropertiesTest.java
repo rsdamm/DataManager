@@ -1,5 +1,8 @@
 package DataManagerUnitTests;
 
+import com.plesba.datamanager.DataManager;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -15,8 +18,9 @@ import java.util.Properties;
  */
 public class DMPropertiesTest {
     
-    private static final String propertiesFile =  "/home/renee/git/DataManager/testconfig.altproperties";
+    private static final String propertiesFile =  "/Users/renee/IdeaProjects/DataManager/testconfig.altproperties";
     private static Properties dataMgrProps = null;
+    private static final Log LOG = LogFactory.getLog(DataManager.class);
     
     public DMPropertiesTest() {
     }
@@ -42,7 +46,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBHost() {
-        System.out.println("testing getDBHost");    
+        LOG.info("DMPropertiesTest testing getDBHost");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "bigkittycats";
         String result = dataMgrProps.getProperty("database.host");
@@ -54,7 +58,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBDatabase() {
-        System.out.println("testing getDBDatabase");
+        LOG.info("DMPropertiesTest testing getDBDatabase");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "pintopony";
         String result = dataMgrProps.getProperty("database.database");
@@ -66,7 +70,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBUser() {
-        System.out.println("testing getDBUser");
+        LOG.info("DMPropertiesTest testing getDBUser");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "bigcat";
         String result = dataMgrProps.getProperty("database.user");
@@ -78,7 +82,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBPassword() {
-        System.out.println("testing getDBPassword");
+        LOG.info("DMPropertiesTest testing getDBPassword");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "youonlywish";
         String result = dataMgrProps.getProperty("database.password");
@@ -89,7 +93,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBPort() {
-        System.out.println("testing getDBPort");
+        LOG.info("DMPropertiesTest testing getDBPort");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "5432";
         String result = dataMgrProps.getProperty("database.port");
@@ -101,7 +105,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBConnectString() {
-        System.out.println("testing getDBConnectString");
+        LOG.info("DMPropertiesTest testing getDBConnectString");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "bigkittycats:5432/pintopony";
         String result = dataMgrProps.getProperty("database.host")
@@ -118,7 +122,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetDBDriver() {
-        System.out.println("testing getDBDriver");
+        LOG.info("DMPropertiesTest testing getDBDriver");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "org.postgresql.Driver";
         String result = dataMgrProps.getProperty("database.driver");
@@ -129,7 +133,7 @@ public class DMPropertiesTest {
      */
     @Test
     public void testGetFilename() {
-        System.out.println("testing testGetFilename");
+        LOG.info("DMPropertiesTest testing testGetFilename");
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         String expResult = "testpropertiesfilename.dat";
         String result = dataMgrProps.getProperty("filename");

@@ -7,7 +7,8 @@ package DataManagerUnitTests;
  */
 
  
-import com.plesba.datamanager.utils.*; 
+import com.plesba.datamanager.DataManager;
+import com.plesba.datamanager.utils.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -20,21 +21,26 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
-import com.plesba.datamanager.utils.*;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static org.junit.Assert.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 /**
  *
  * @author REnee
  */
 public class DBConnectionTest {
     private final String propertiesFile;
-    private DBConnection dbSetup; 
+    private DBConnection dbConnection;
     private static Properties dataMgrProps;
     private Connection connection;
+    private static final Log LOG = LogFactory.getLog(DataManager.class);
+
     
     public DBConnectionTest() {
-        propertiesFile =  "/home/renee/git/DataManager/config.properties";
+        propertiesFile =  "/Users/renee/IdeaProjects/DataManager/config.properties";
     }
     
     @BeforeClass
@@ -58,7 +64,7 @@ public class DBConnectionTest {
      */
     @Test
     public void testGetConnection() {
-       System.out.println("testGetConnection");
+        LOG.info("DBConnection.testGetConnection starting");
  
        DateTimeFormatter dtf = null;
        Date dateResult = null;
@@ -66,23 +72,24 @@ public class DBConnectionTest {
        String dateResultString = null;
        LocalDate systemDate  = null;
        
-        dataMgrProps = new DMProperties(propertiesFile).getProp(); 
-        dbSetup = getDB(); 
+        dataMgrProps = new DMProperties(propertiesFile).getProp();
+        dbConnection = new DBConnection(dataMgrProps);
+        connection = dbConnection.getConnection();
+
         try {
             dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");           
             systemDate = LocalDate.now();
             expDateString = dtf.format(systemDate);
-            System.out.println ("Java result: " + expDateString); 
+            LOG.info("Java result: " + expDateString);
         }
         catch (DateTimeException exc) {
-            System.out.printf("%s can't be formatted!%n", expDateString);
+            LOG.info("DBConnectionTest %s can't be formatted!%n"+expDateString);
             throw exc;
         }
 
         try { 
             
             String query = "SELECT current_date";
-            connection = dbSetup.getConnection();
             // execute query
             Statement statement = connection.createStatement ();
             ResultSet rs = statement.executeQuery (query); 
@@ -92,7 +99,7 @@ public class DBConnectionTest {
                 
                 dateResult = rs.getDate("date");    
                 dateResultString = dateResult.toString();
-                System.out.println ("Query result: " + dateResultString);   
+                LOG.info("DBConnectionTest Query result: " + dateResultString);
   
             } 
           
@@ -100,19 +107,11 @@ public class DBConnectionTest {
         catch (java.sql.SQLException e ) {
             System.err.println (e); 
             e.printStackTrace();    
-        }   
-         System.out.println ("DBSetupTest successful");
+        }
+        LOG.info("DBConnectionTest successful");
+
+        dbConnection.closeConnection();
         assertEquals(expDateString, dateResultString);  
     }
-    public static DBConnection getDB(){
-    
-        return new DBConnection.ConnectionBuilder()
-                .user(dataMgrProps.getProperty("database.user"))
-                .password(dataMgrProps.getProperty("database.password"))
-                .database(dataMgrProps.getProperty("database.database"))
-                .port(dataMgrProps.getProperty("database.port"))
-                .driver(dataMgrProps.getProperty("database.driver"))
-                .host(dataMgrProps.getProperty("database.host"))
-                .build();
-    } 
+
 }

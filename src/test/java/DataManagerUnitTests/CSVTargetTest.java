@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package DataManagerUnitTests;
 
- 
+
 import com.plesba.datamanager.DataManager;
 import com.plesba.datamanager.source.CSVSource;
+import com.plesba.datamanager.target.CSVTarget;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -28,32 +24,35 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author REnee
  */
-public class CSVSourceTest {
+public class CSVTargetTest {
     private static PipedOutputStream outputStream1 = null;
     private static PipedInputStream inputStream1 = null;
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
     private static CSVSource csvSource = null;
-    private long recordCount = 0;
+    private static CSVTarget csvTarget = null;
+    private long recordCountIn = 0;
+    private long recordCountOut = 0;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
-    private static String csvFilename;
+    private static String csvOutfilename;
+    private static String csvInfilename;
     private static Properties dataMgrProps = null;
 
     private static Properties dbProp;
-    public CSVSourceTest() {
+    public CSVTargetTest() {
     }
-    
+
     @BeforeClass
     public static void setUpClass() {
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
-    
+
     @Before
     public void setUp() {
     }
-    
+
     @After
     public void tearDown() {
     }
@@ -64,30 +63,36 @@ public class CSVSourceTest {
      */
     @Test
     public void testRun() throws IOException {
-        
 
-        LOG.info("CSVSourceTest starting");
+
+        LOG.info("CSVTargetTest starting");
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        LOG.info("CVSourceTest properties obtained");
+        LOG.info("CSVTargetTest starting properties obtained");
 
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
-        csvFilename = dataMgrProps.getProperty("csv.infilename");
-        LOG.info("CSVSourceTest input from DB file: " + csvFilename);
 
-        csvSource = new CSVSource(csvFilename, outputStream1);
+        csvInfilename = dataMgrProps.getProperty("csv.infilename");
+        LOG.info("CSVTargetTest input file: " + csvInfilename);
+
+        csvOutfilename = dataMgrProps.getProperty("csv.outfilename");
+        LOG.info("CSVTargetTest output file: " + csvOutfilename);
+
+        csvSource = new CSVSource(csvInfilename, outputStream1);
         csvSource.putDataOnOutputStream();
 
-        recordCount = Files.lines(Paths.get(csvFilename)).count();
-        LOG.info("CSVSourceTest Input file record count : " + recordCount);
-        
-        int result = csvSource.getReadCount();
-        LOG.info("CSVSourceTest Loaded " + result + " records");
+        recordCountIn = Files.lines(Paths.get(csvInfilename)).count();
+        LOG.info("CSVTargetTest Input file record count : " + recordCountIn);
 
-        LOG.info("CSVSourceTest Stream written count: " + result);
-        assertEquals(recordCount, result);
-        LOG.info("CSVSourceTest completed");
+        csvTarget = new CSVTarget(csvOutfilename, inputStream1);
+        csvTarget.processDataFromInputStream();
+
+        recordCountOut = Files.lines(Paths.get(csvOutfilename)).count();
+        LOG.info("CSVTargetTest output file record count : " + recordCountOut);
+
+        assertEquals(recordCountIn, recordCountOut);
+        LOG.info("CSVTargetTest completed");
     }
-    
+
 }
