@@ -17,10 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *
  * @author renee
- *
- *   Writes to csv file
+ * <p>
+ * Writes to csv file
  */
 public class CSVTarget {
 
@@ -37,7 +36,7 @@ public class CSVTarget {
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
 
-        LOG.info("CSVTarget outputFile as set in constructor "+outFile);
+        LOG.info("CSVTarget outputFile as set in constructor " + outFile);
     }
 
     public CSVTarget() {
@@ -50,7 +49,7 @@ public class CSVTarget {
     public void processDataFromInputStream() throws IOException {
 
         try {
-            LOG.info("CSVTarget writing to "+outFile);
+            LOG.info("CSVTarget writing to " + outFile);
             fileWriter = fileWriter = new FileWriter(outFile);
 
             StringBuilder recordStringBuffer = new StringBuilder();
@@ -59,12 +58,14 @@ public class CSVTarget {
 
             int streamByte = inputStream.read();
 
-            while (streamByte != -1) {  //end of stream
-
-                if (streamByte != 10) { //end of line
+            while (streamByte != -1) {
+                /* until end of stream */
+                if (streamByte != 10) {
+                    //end of line
                     recordStringBuffer.append((char) streamByte);
-                } else { //process record
-                                                   recordCount++;
+                } else {
+                    /* process record */
+                    recordCount++;
                     streamRecord = recordStringBuffer.toString() + '\n';
                     fileWriter.append(streamRecord);
 

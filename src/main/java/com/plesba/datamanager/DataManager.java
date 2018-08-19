@@ -47,6 +47,7 @@ public class DataManager {
         private static Properties dbProp;
         private static String datasource;
         private static String datatarget;
+        private static String csvSourceFilename;
 
     private static final Log LOG = LogFactory.getLog(DataManager.class);
 
@@ -106,7 +107,8 @@ public class DataManager {
             }
         } else if (datasource.equals( "csv")) {
             //csvreader - read from csv file / write to output stream
-            csvSource = new CSVSource(dataMgrProps.getProperty("csv.infilename"), outputStream1);
+            csvSourceFilename = dataMgrProps.getProperty("csv.infilename");
+            csvSource = new CSVSource(csvSourceFilename, outputStream1);
             LOG.info("DataManager input from csv file: " + csvSource);
             new Thread(
                     new Runnable() {
