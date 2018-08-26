@@ -9,6 +9,7 @@ import com.plesba.datamanager.source.CSVSource;
 import com.plesba.datamanager.source.DBSource;
 import com.plesba.datamanager.source.KinesisSource;
 import com.plesba.datamanager.transformers.NullTransformer;
+import com.plesba.datamanager.transformers.ReverseTransformer;
 import com.plesba.datamanager.target.KinesisTarget;
 import com.plesba.datamanager.target.CSVTarget;
 import com.plesba.datamanager.target.DBTarget;
@@ -42,6 +43,7 @@ public class DataManager {
         private static PipedOutputStream outputStream2 = null;
         private static CSVSource csvSource = null;
         private static NullTransformer nullTransformer = null;
+        private static ReverseTransformer reverseTransformer = null;
         private static DBTarget dbLoader = null;
         private static DBSource dbReader = null;
         private static CSVTarget csvTarget = null;
@@ -152,10 +154,20 @@ public class DataManager {
             nullTransformer = new NullTransformer(inputStream1, outputStream2);
             LOG.info("DataManager no transformer provided. See property: dm.transformtype");
         } else if (transformType.equals("none")) {
-                LOG.info("DataManager Nulltransformer selected.");
-                nullTransformer = new NullTransformer(inputStream1, outputStream2);
-                nullTransformer.processDataFromInputStream();
-            } else LOG.error("DataManager no known transformer selected. See property: dm.transformtype");
+            LOG.info("DataManager Nulltransformer selected.");
+            nullTransformer = new NullTransformer(inputStream1, outputStream2);
+            nullTransformer.processDataFromInputStream();
+        }
+        else if (transformType.equals("reverse")) {
+                LOG.info("DataManager ReverseTransformer selected.");
+                reverseTransformer = new ReverseTransformer(inputStream1, outputStream2);
+                reverseTransformer.processDataFromInputStream();
+        }
+        else {
+            LOG.info("DataManager no known transformer selected. Defaulting to NullTranformer. See property: dm.transformtype");
+            nullTransformer = new NullTransformer(inputStream1, outputStream2);
+            nullTransformer.processDataFromInputStream();
+        }
 
         if (datatarget.equals("stream")) {
 

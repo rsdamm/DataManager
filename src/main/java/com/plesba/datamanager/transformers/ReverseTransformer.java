@@ -2,41 +2,45 @@ package com.plesba.datamanager.transformers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
-public class NullTransformer {
+public class ReverseTransformer {
     private final PipedInputStream inputStream;
     private PipedOutputStream outputStream;
     private int recordCount = 0;
     private byte[] theByteArray = null;
-    private static final Log LOG = LogFactory.getLog(NullTransformer.class);
+    private static final Log LOG = LogFactory.getLog(ReverseTransformer.class);
+    private String csvDelimiter = ",";
 
-    public NullTransformer(PipedInputStream parameterInputStream, PipedOutputStream parameterOutputStream ) {
+    public ReverseTransformer(PipedInputStream parameterInputStream, PipedOutputStream parameterOutputStream ) {
 
         LOG.info("NullTransformer started processing");
         inputStream = parameterInputStream;
         outputStream = parameterOutputStream;
     }
 
-    public NullTransformer() {
+    public ReverseTransformer() {
 
-        LOG.info("NullTransformer started processing with no parameters");
+        LOG.info("ReverseTransformer started processing with no parameters");
         inputStream = null;
         outputStream = null;
+
     }
 
     public void processDataFromInputStream() throws IOException {
 
         try {
-            LOG.info("NullTransformer reading from input stream/writing to output stream");
+            LOG.info("ReverseTransformer reading from input stream/writing to output stream");
 
             StringBuilder recordStringBuffer = new StringBuilder();
             String streamRecord = new String();
             //Read one line at a time
 
             int streamByte = inputStream.read();
+            int j = 0;
 
             while (streamByte != -1) {
                 /* until end of stream */
@@ -46,21 +50,30 @@ public class NullTransformer {
                 } else {
                     /* process record */
                     recordCount++;
-                    streamRecord = recordStringBuffer.toString() + '\n';
+
+                    //reverse the columns
+                    streamRecord = recordStringBuffer.toString();
+                    String[] arrayOfColumns = streamRecord.split(csvDelimiter);
+                    String[] revData = new String[arrayOfColumns.length];
+                    j=0;
+                    for (int i = arrayOfColumns.length-1; i>=0 ;i--) {
+                          revData[j]= arrayOfColumns[i];
+                          j++;
+                    }
+                    streamRecord = String.join(",", revData) + '\n';
 
                     //write to output stream
-                    recordStringBuffer.append("\n");
-                    theByteArray = recordStringBuffer.toString().getBytes();
+                    theByteArray = streamRecord.getBytes();
                     outputStream.write(theByteArray);
 
-                    LOG.info("NullTransformer processed record: " + streamRecord);
+                    LOG.info("ReverseTransformer processed record: " + streamRecord);
                     recordStringBuffer.setLength(0);
                 }
-                streamByte = inputStream.read();
+                streamByte = inputStream.read();        
 
             }
             outputStream.close();
-            LOG.info(String.format("NullTransformer finished processing - records processed: %d", recordCount));
+            LOG.info(String.format("ReverseTransformer finished processing - records processed: %d", recordCount));
 
         } catch (IOException e) {
             e.printStackTrace();
