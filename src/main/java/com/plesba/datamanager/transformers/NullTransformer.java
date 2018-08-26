@@ -33,7 +33,7 @@ public class NullTransformer {
             LOG.info("NullTransformer reading from input stream/writing to output stream");
 
             StringBuilder recordStringBuffer = new StringBuilder();
-            String streamRecord = new String();     
+            String streamRecord = new String();
             //Read one line at a time
 
             int streamByte = inputStream.read();
@@ -44,7 +44,7 @@ public class NullTransformer {
                     //end of line
                     recordStringBuffer.append((char) streamByte);
                 } else {
-                    /* process record */
+                    /* process record */    
                     recordCount++;
                     streamRecord = recordStringBuffer.toString() + '\n';
 
