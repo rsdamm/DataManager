@@ -8,6 +8,7 @@ package com.plesba.datamanager;
 import com.plesba.datamanager.source.CSVSource;
 import com.plesba.datamanager.source.DBSource;
 import com.plesba.datamanager.source.KinesisSource;
+import com.plesba.datamanager.transformers.NullTransformer;
 import com.plesba.datamanager.target.KinesisTarget;
 import com.plesba.datamanager.target.CSVTarget;
 import com.plesba.datamanager.target.DBTarget;
@@ -22,6 +23,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 /**
@@ -34,9 +36,12 @@ public class DataManager {
         private static Properties dataMgrProps = null;
         private static DBConnection dbConnection = null;
         private static Connection connection = null;
-        private static PipedOutputStream outputStream1 = null;
         private static PipedInputStream inputStream1 = null;
+        private static PipedOutputStream outputStream1 = null;
+        private static PipedInputStream inputStream2 = null;
+        private static PipedOutputStream outputStream2 = null;
         private static CSVSource csvSource = null;
+        private static NullTransformer nullTransformer = null;
         private static DBTarget dbLoader = null;
         private static DBSource dbReader = null;
         private static CSVTarget csvTarget = null;
@@ -47,6 +52,7 @@ public class DataManager {
         private static Properties dbProp;
         private static String datasource;
         private static String datatarget;
+        private static String transformType = null;
         private static String csvSourceFilename;
 
     private static final Log LOG = LogFactory.getLog(DataManager.class);
@@ -68,15 +74,17 @@ public class DataManager {
 
         datasource = dataMgrProps.getProperty("dm.datasource");
         datatarget = dataMgrProps.getProperty("dm.datatarget");
+        transformType = dataMgrProps.getProperty("dm.transformtype");
 
-
-        LOG.info("DataManager datasource =  "+ datasource);
-        LOG.info("DataManager datatarget =  "+ datatarget);
+        LOG.info("DataManager datasource =  " + datasource);
+        LOG.info("DataManager datatarget =  " + datatarget);
+        LOG.info("DataManager transformtype = " + transformType);
 
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
 
-
+        inputStream2 = new PipedInputStream();
+        outputStream2 = new PipedOutputStream(inputStream2);
         if (datasource.equals( "stream")) {
 
             //kinesis consumer, read from kinesis stream / write to output stream
@@ -91,7 +99,6 @@ public class DataManager {
             krProp.setProperty("kinesis.applicationname", dataMgrProps.getProperty("kinesis.applicationname"));
             krProp.setProperty("kinesis.endpoint", dataMgrProps.getProperty("kinesis.endpoint"));
             krProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
-
 
             try {
                 kReader = new KinesisSource(krProp, outputStream1);
@@ -137,8 +144,18 @@ public class DataManager {
 
         }
         else {
-                LOG.error("DataManager no source selected. See property: dm.datasource" );
+                LOG.error("DataManager no known source selected. See property: dm.datasource" );
         }
+
+        // use a transformer
+        if (StringUtils.isEmpty(transformType)) {
+            nullTransformer = new NullTransformer(inputStream1, outputStream2);
+            LOG.info("DataManager no transformer provided. See property: dm.transformtype");
+        } else if (transformType.equals("none")) {
+                LOG.info("DataManager Nulltransformer selected.");
+                nullTransformer = new NullTransformer(inputStream1, outputStream2);
+                nullTransformer.processDataFromInputStream();
+            } else LOG.error("DataManager no known transformer selected. See property: dm.transformtype");
 
         if (datatarget.equals("stream")) {
 
@@ -153,7 +170,7 @@ public class DataManager {
             kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
 
             try {
-                kWriter = new KinesisTarget(kwProp, inputStream1);
+                kWriter = new KinesisTarget(kwProp, inputStream2);
                 kWriter.processDataFromInputStream();
             } catch (InterruptedException ex) {
                 Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
@@ -173,7 +190,7 @@ public class DataManager {
             dbConnection = new DBConnection(dbProp);
             connection = dbConnection.getConnection();
 
-            dbLoader = new DBTarget(connection, inputStream1);
+            dbLoader = new DBTarget(connection, inputStream2);
             dbLoader.processDataFromInputStream();
             dbConnection.closeConnection();
 
@@ -181,11 +198,11 @@ public class DataManager {
             //csv, read from input stream / write to  csv
 
             LOG.info("DataManager output to csv. ");
-            csvTarget = new CSVTarget(dataMgrProps.getProperty("csv.outfilename"), inputStream1);
+            csvTarget = new CSVTarget(dataMgrProps.getProperty("csv.outfilename"), inputStream2);
             csvTarget.processDataFromInputStream();
         } else {
 
-            LOG.error("DataManager - no target selected - see property: dm.datatarget");
+            LOG.error("DataManager - no known target selected - see property: dm.datatarget");
         }
 
         LOG.info("DataManager Completed................");
