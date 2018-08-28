@@ -36,7 +36,7 @@ public class CSVTarget {
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
 
-        LOG.info("CSVTarget outputFile as set in constructor " + outFile);
+        LOG.info("CSVTarget outputFile: " + outFile);
     }
 
     public CSVTarget() {
@@ -47,7 +47,7 @@ public class CSVTarget {
     }
 
     public void processDataFromInputStream() throws IOException {
-
+        LOG.info("CSVTarget processDataFromInputStream");
         try {
             LOG.info("CSVTarget writing to " + outFile);
             fileWriter = fileWriter = new FileWriter(outFile);
