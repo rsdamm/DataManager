@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class CSVTarget {
 
-    private final PipedInputStream inputStream;
+    private PipedInputStream inputStream;
     private int recordCount = 0;
     private FileWriter fileWriter;
     private String outFile;

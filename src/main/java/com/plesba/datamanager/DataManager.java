@@ -54,7 +54,7 @@ public class DataManager {
         private static Properties dbProp;
         private static String datasource;
         private static String datatarget;
-        private static String transformType = null;
+        private static String transformType = "null";
         private static String csvSourceFilename;
 
     private static final Log LOG = LogFactory.getLog(DataManager.class);

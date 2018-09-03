@@ -19,7 +19,7 @@ import org.apache.commons.logging.LogFactory;
 //read input stream; write to kinesis stream (producer)
 public class KinesisTarget {
 
-    private final PipedInputStream inputStream;
+    private PipedInputStream inputStream;
     private DescribeStreamRequest describeStreamRequest;
     private static AmazonKinesis kinesis= null;
     private AmazonKinesisClientBuilder clientBuilder = null;

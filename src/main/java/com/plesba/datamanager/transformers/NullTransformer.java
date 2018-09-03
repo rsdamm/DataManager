@@ -7,7 +7,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 public class NullTransformer {
-    private final PipedInputStream inputStream;
+    private PipedInputStream inputStream;
     private PipedOutputStream outputStream;
     private int recordCount = 0;
     private byte[] theByteArray = null;
@@ -18,13 +18,6 @@ public class NullTransformer {
         LOG.info("NullTransformer started processing");
         inputStream = parameterInputStream;
         outputStream = parameterOutputStream;
-    }
-
-    public NullTransformer() {
-
-        LOG.info("NullTransformer started processing with no parameters");
-        inputStream = null;
-        outputStream = null;
     }
 
     public void processDataFromInputStream() throws IOException {

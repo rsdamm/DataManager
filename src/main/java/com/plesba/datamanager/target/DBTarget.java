@@ -24,7 +24,7 @@ import java.util.List;
 public class DBTarget {
 
     private final Connection connection;
-    private final PipedInputStream inputStream;
+    private PipedInputStream inputStream;
     private final String insert_dml = "INSERT INTO ham_call_signs (NAME, CALL_SIGN) VALUES (?, ?)";
     private PreparedStatement stmt = null;
     private int recordCount = 0;
