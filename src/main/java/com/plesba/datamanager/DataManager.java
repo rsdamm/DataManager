@@ -85,7 +85,7 @@ public class DataManager {
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
 
-        inputStream2 = new PipedInputStream();
+        inputStream2 = new PipedInputStream();       
         outputStream2 = new PipedOutputStream(inputStream2);
         if (datasource.equals( "stream")) {
 
