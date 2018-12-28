@@ -17,7 +17,7 @@ import org.apache.commons.logging.LogFactory;
 
 
 //read input stream; write to kinesis stream (producer)
-public class KinesisTarget {
+public class KinesisTargetFromStream {
 
     private PipedInputStream inputStream;
     private DescribeStreamRequest describeStreamRequest;
@@ -43,9 +43,9 @@ public class KinesisTarget {
     private static Integer maxRecordsToProcess = DEFAULT_MAX_RECORDS_TO_PROCESS;
 
     private boolean stopProcessing=false;
-    private static final Log LOG = LogFactory.getLog(KinesisTarget.class);
+    private static final Log LOG = LogFactory.getLog(KinesisTargetFromStream.class);
 
-    public KinesisTarget(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
+    public KinesisTargetFromStream(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
 
         inputStream = parameterInputStream;
 
@@ -54,32 +54,32 @@ public class KinesisTarget {
         if (streamNameOverride != null) {
             streamName = streamNameOverride;
         }
-        LOG.info("KinesisTarget using stream name " + streamName);
+        LOG.info("KinesisTargetFromStream using stream name " + streamName);
 
         String streamSizeOverride = parameterProperties.getProperty("kinesis.streamsize");
         if (streamSizeOverride != null) {
             streamSize = Integer.parseInt(streamSizeOverride);
         }
-        LOG.info("KinesisTarget using stream size " + streamSize);
+        LOG.info("KinesisTargetFromStream using stream size " + streamSize);
 
         String partitionKeyOverride = parameterProperties.getProperty("kinesis.partitionkey");
         if (partitionKeyOverride != null) {
             partitionKeyName = partitionKeyOverride;
         }
-        LOG.info("KinesisTarget using Kinesis partitionkey " + partitionKeyName);
+        LOG.info("KinesisTargetFromStream using Kinesis partitionkey " + partitionKeyName);
 
         String kinesisRegionOverride = parameterProperties.getProperty("kinesis.region");
         if (kinesisRegionOverride != null) {
             kinesisRegion = kinesisRegionOverride;
         }
-        LOG.info("KinesisTarget using Kinesis region " + kinesisRegion);
+        LOG.info("KinesisTargetFromStream using Kinesis region " + kinesisRegion);
 
         String maxRecordsToProcessOverride = parameterProperties.getProperty("kinesis.maxrecordstoprocess");
         if (maxRecordsToProcessOverride != null) {
             maxRecordsToProcess = Integer.parseInt(maxRecordsToProcessOverride);
 
         }
-        LOG.info("KinesisTarget using maxRecordsToProcess " + maxRecordsToProcess);
+        LOG.info("KinesisTargetFromStream using maxRecordsToProcess " + maxRecordsToProcess);
 
 
         describeStreamRequest =  new DescribeStreamRequest().withStreamName(streamName);
@@ -106,10 +106,10 @@ public class KinesisTarget {
         try {
             streamDescription = kinesis.describeStream(describeStreamRequest).getStreamDescription();
 
-            LOG.info("\"KinesisTarget stream %s has a status of " + streamName + " "  +streamDescription.getStreamStatus());
+            LOG.info("\"KinesisTargetFromStream stream %s has a status of " + streamName + " "  +streamDescription.getStreamStatus());
             if ("DELETING".equals(streamDescription.getStreamStatus())) {
 
-                LOG.info("KinesisTarget stream is being deleted. Processing terminating: " + streamName);
+                LOG.info("KinesisTargetFromStream stream is being deleted. Processing terminating: " + streamName);
                 System.exit(0);
             }
 
@@ -118,7 +118,7 @@ public class KinesisTarget {
                 waitForStreamToBecomeAvailable(streamName);
             }
         } catch (ResourceNotFoundException ex) {
-            LOG.info("KinesisTarget stream does not exist. Creating it now." +streamName);
+            LOG.info("KinesisTargetFromStream stream does not exist. Creating it now." +streamName);
 
             // Create a stream. The number of shards determines the provisioned throughput.
             createStreamRequest = new CreateStreamRequest();
@@ -128,18 +128,18 @@ public class KinesisTarget {
             // The stream is now being created. Wait for it to become active.
             waitForStreamToBecomeAvailable(streamName);
         }
-        LOG.info("KinesisTarget stream initialized and ACTIVE ----------->" + streamName);
+        LOG.info("KinesisTargetFromStream stream initialized and ACTIVE ----------->" + streamName);
 
     }
 
     private void waitForStreamToBecomeAvailable(String streamName) throws InterruptedException {
 
-        LOG.info("KinesisTarget waiting for stream to become ACTIVE." + streamName);
+        LOG.info("KinesisTargetFromStream waiting for stream to become ACTIVE." + streamName);
         long startTime = System.currentTimeMillis();
         long endTime = startTime + TimeUnit.MINUTES.toMillis(10);
 
-        LOG.info("KinesisTarget waiting for to become ACTIVE..." + startTime);
-        LOG.info("KinesisTarget waiting for to become ACTIVE..." + endTime);
+        LOG.info("KinesisTargetFromStream waiting for to become ACTIVE..." + startTime);
+        LOG.info("KinesisTargetFromStream waiting for to become ACTIVE..." + endTime);
         while (System.currentTimeMillis() < endTime) {
 
             try {
@@ -147,7 +147,7 @@ public class KinesisTarget {
 
                 streamStatus = describeStreamResult.getStreamDescription().getStreamStatus();
 
-                LOG.info("KinesisTarget current state " + streamStatus);
+                LOG.info("KinesisTargetFromStream current state " + streamStatus);
                 if ("ACTIVE".equals(streamStatus)) {
                     return;
                 }
@@ -155,19 +155,19 @@ public class KinesisTarget {
                 // ResourceNotFound means the stream doesn't exist yet,
                 // so ignore this error and just keep polling.
 
-                LOG.info("KinesisTarget still waiting for stream" + streamName + "  to become ACTIVE. Will fail at "+ endTime);
+                LOG.info("KinesisTargetFromStream still waiting for stream" + streamName + "  to become ACTIVE. Will fail at "+ endTime);
             } catch (AmazonServiceException ase) {
                 throw ase;
             }
             Thread.sleep(TimeUnit.SECONDS.toMillis(20));
         }
 
-        throw new RuntimeException(String.format("KinesisTarget stream %s never became active", streamName));
+        throw new RuntimeException(String.format("KinesisTargetFromStream stream %s never became active", streamName));
     }
 
     public void processDataFromInputStream() {
 
-        LOG.info("KinesisTarget started stream processing " + streamName);
+        LOG.info("KinesisTargetFromStream started stream processing " + streamName);
 
         StringBuilder recordStringBuffer = new StringBuilder();
         String streamRecord = new String();
@@ -182,17 +182,17 @@ public class KinesisTarget {
                 } else { // process record
                     streamRecord = recordStringBuffer.toString() + '\n';
 
-                    LOG.info("KinesisTarget record to put placed on stream: " + streamRecord);
+                    LOG.info("KinesisTargetFromStream record to put placed on stream: " + streamRecord);
                     try {
                          kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
                     } catch (UnsupportedEncodingException ex) {
-                        Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     recordCount = recordCount + 1;
                     recordStringBuffer.setLength(0);
                     if (recordCount >= maxRecordsToProcess & maxRecordsToProcess > -1 ){ stopProcessing = true;}
 
-                    LOG.info("KinesisTarget records written to stream: " + recordCount);
+                    LOG.info("KinesisTargetFromStream records written to stream: " + recordCount);
                 }
 
 
@@ -201,15 +201,15 @@ public class KinesisTarget {
 
 
             kinesis.putRecord(streamName,  ByteBuffer.wrap(streamRecord.getBytes("UTF-8")),partitionKeyName);
-            LOG.info("KinesisTarget completed and processed "+ recordCount + " records.");
+            LOG.info("KinesisTargetFromStream completed and processed "+ recordCount + " records.");
 
         } catch(Exception ex){
 
-            LOG.error("KinesisTarget error detected in processDataFromInputStream " ,ex);
+            LOG.error("KinesisTargetFromStream error detected in processDataFromInputStream " ,ex);
 
         }
 
-        LOG.info("KinesisTarget (Producer) finished processing");
+        LOG.info("KinesisTargetFromStream (Producer) finished processing");
     }
 
 

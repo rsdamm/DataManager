@@ -5,14 +5,15 @@
  */
 package com.plesba.datamanager;
 
-import com.plesba.datamanager.source.CSVSource;
-import com.plesba.datamanager.source.DBSource;
-import com.plesba.datamanager.source.KinesisSource;
+import com.plesba.datamanager.source.CSVSourceToStream;
+import com.plesba.datamanager.source.DBSourceToStream;
+import com.plesba.datamanager.source.KinesisSourceToStream;
+import com.plesba.datamanager.target.DBTargetFromStream;
+import com.plesba.datamanager.target.KinesisTargetFromStream;
 import com.plesba.datamanager.transformers.NullTransformer;
 import com.plesba.datamanager.transformers.ReverseTransformer;
-import com.plesba.datamanager.target.KinesisTarget;
-import com.plesba.datamanager.target.CSVTarget;
-import com.plesba.datamanager.target.DBTarget;
+import com.plesba.datamanager.transformers.BeamTransformer;
+import com.plesba.datamanager.target.CSVTargetFromStream;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 
@@ -41,14 +42,15 @@ public class DataManager {
         private static PipedOutputStream outputStream1 = null;
         private static PipedInputStream inputStream2 = null;
         private static PipedOutputStream outputStream2 = null;
-        private static CSVSource csvSource = null;
+        private static CSVSourceToStream csvSourceToStream = null;
         private static NullTransformer nullTransformer = null;
+        private static BeamTransformer beamTransformer = null;
         private static ReverseTransformer reverseTransformer = null;
-        private static DBTarget dbLoader = null;
-        private static DBSource dbReader = null;
-        private static CSVTarget csvTarget = null;
-        private static KinesisTarget kWriter = null;
-        private static KinesisSource kReader = null;
+        private static DBTargetFromStream dbLoader = null;
+        private static DBSourceToStream dbReader = null;
+        private static CSVTargetFromStream csvTargetFromStream = null;
+        private static KinesisTargetFromStream kWriter = null;
+        private static KinesisSourceToStream kReader = null;
         private static Properties kwProp;
         private static Properties krProp;
         private static Properties dbProp;
@@ -85,7 +87,7 @@ public class DataManager {
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
 
-        inputStream2 = new PipedInputStream();       
+        inputStream2 = new PipedInputStream();
         outputStream2 = new PipedOutputStream(inputStream2);
         if (datasource.equals( "stream")) {
 
@@ -103,7 +105,7 @@ public class DataManager {
             krProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
 
             try {
-                kReader = new KinesisSource(krProp, outputStream1);
+                kReader = new KinesisSourceToStream(krProp, outputStream1);
                 new Thread(
                         new Runnable() {
                             public void run() {
@@ -112,17 +114,17 @@ public class DataManager {
                         }
                 ).start();
             } catch (Exception ex) {
-                Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(KinesisSourceToStream.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (datasource.equals( "csv")) {
             //csvreader - read from csv file / write to output stream
             csvSourceFilename = dataMgrProps.getProperty("csv.infilename");
-            csvSource = new CSVSource(csvSourceFilename, outputStream1);
-            LOG.info("DataManager input from csv file: " + csvSource);
+            csvSourceToStream = new CSVSourceToStream(csvSourceFilename, outputStream1);
+            LOG.info("DataManager input from csv file: " + csvSourceToStream);
             new Thread(
                     new Runnable() {
                         public void run() {
-                            csvSource.putDataOnOutputStream();
+                            csvSourceToStream.putDataOnOutputStream();
                         }
                     }
             ).start();
@@ -140,7 +142,7 @@ public class DataManager {
             dbConnection = new DBConnection(dbProp);
             connection = dbConnection.getConnection();
 
-            dbReader = new DBSource(connection, outputStream1);
+            dbReader = new DBSourceToStream(connection, outputStream1);
             dbReader.processDataFromDB();
             dbConnection.closeConnection();
 
@@ -163,6 +165,11 @@ public class DataManager {
                 reverseTransformer = new ReverseTransformer(inputStream1, outputStream2);
                 reverseTransformer.processDataFromInputStream();
         }
+        else if (transformType.equals("beam")) {
+            LOG.info("DataManager BeamTransformer selected.");
+            beamTransformer = new BeamTransformer(inputStream1, outputStream2);
+            beamTransformer.processDataFromInputStream();
+        }
         else {
             LOG.info("DataManager no known transformer selected. Defaulting to NullTranformer. See property: dm.transformtype");
             nullTransformer = new NullTransformer(inputStream1, outputStream2);
@@ -172,7 +179,7 @@ public class DataManager {
         if (datatarget.equals("stream")) {
 
             //kinesis producer, read from input stream / write to kinesis stream (producer)
-            LOG.info("DataManager output to KinesisTarget stream (producer). ");
+            LOG.info("DataManager output to KinesisTargetFromStream stream (producer). ");
 
             kwProp = new Properties();
             kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
@@ -182,10 +189,10 @@ public class DataManager {
             kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
 
             try {
-                kWriter = new KinesisTarget(kwProp, inputStream2);
+                kWriter = new KinesisTargetFromStream(kwProp, inputStream2);
                 kWriter.processDataFromInputStream();
             } catch (InterruptedException ex) {
-                Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (datatarget.equals("db")) {
             //db, read from input stream / write to db
@@ -202,7 +209,7 @@ public class DataManager {
             dbConnection = new DBConnection(dbProp);
             connection = dbConnection.getConnection();
 
-            dbLoader = new DBTarget(connection, inputStream2);
+            dbLoader = new DBTargetFromStream(connection, inputStream2);
             dbLoader.processDataFromInputStream();
             dbConnection.closeConnection();
 
@@ -210,8 +217,8 @@ public class DataManager {
             //csv, read from input stream / write to  csv
 
             LOG.info("DataManager output to csv. ");
-            csvTarget = new CSVTarget(dataMgrProps.getProperty("csv.outfilename"), inputStream2);
-            csvTarget.processDataFromInputStream();
+            csvTargetFromStream = new CSVTargetFromStream(dataMgrProps.getProperty("csv.outfilename"), inputStream2);
+            csvTargetFromStream.processDataFromInputStream();
         } else {
 
             LOG.error("DataManager - no known target selected - see property: dm.datatarget");

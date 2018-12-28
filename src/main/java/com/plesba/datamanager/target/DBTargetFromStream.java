@@ -8,7 +8,6 @@ package com.plesba.datamanager.target;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.sql.*;
@@ -21,7 +20,7 @@ import java.util.List;
  *
  *   Reads input stream writes to PostgreSQL database
  */
-public class DBTarget {
+public class DBTargetFromStream {
 
     private final Connection connection;
     private PipedInputStream inputStream;
@@ -31,20 +30,20 @@ public class DBTarget {
     private List<String> cols ;
     private int tableRecordCount=0;
 
-    private static final Log LOG = LogFactory.getLog(DBTarget.class);
+    private static final Log LOG = LogFactory.getLog(DBTargetFromStream.class);
 
-    public DBTarget(Connection parameterConnection, PipedInputStream parameterInputStream) {
+    public DBTargetFromStream(Connection parameterConnection, PipedInputStream parameterInputStream) {
         inputStream = parameterInputStream;
         connection = parameterConnection;
 
-        LOG.info("DBTarget started processing");
+        LOG.info("DBTargetFromStream started processing");
     }
 
-    public DBTarget() {
+    public DBTargetFromStream() {
         inputStream = null;
         connection = null;
 
-        LOG.info("DBTarget started processing with no parameters");
+        LOG.info("DBTargetFromStream started processing with no parameters");
     }
 
     public void processDataFromInputStream() throws IOException {
@@ -70,7 +69,7 @@ public class DBTarget {
                     recordCount++;
                     streamRecord = recordStringBuffer.toString();
 
-                    LOG.info("DBTarget processed " + streamRecord);
+                    LOG.info("DBTargetFromStream processed " + streamRecord);
                     recordStringBuffer.setLength(0);
                 }
                 streamByte = inputStream.read();
@@ -79,7 +78,7 @@ public class DBTarget {
 
             connection.commit();
 
-            LOG.info("DBTarget processed all records from input stream; Records inserted to database: " + recordCount);
+            LOG.info("DBTargetFromStream processed all records from input stream; Records inserted to database: " + recordCount);
 
         } catch (java.sql.SQLException e) {
             System.err.println(e);
@@ -109,7 +108,7 @@ public class DBTarget {
 
         try {
 
-            LOG.info("DBTarget.getRecordCountInTable starting " + recordCount);
+            LOG.info("DBTargetFromStream.getRecordCountInTable starting " + recordCount);
             try {
 
                 String query = "SELECT count(*) as record_count FROM ham_call_signs";
@@ -123,7 +122,7 @@ public class DBTarget {
                     tableRecordCount = Integer.parseInt(rs.getString("record_count"));
 
                 }
-                LOG.info("DBTarget.getRecordCountInTable finished processing " + recordCount);
+                LOG.info("DBTargetFromStream.getRecordCountInTable finished processing " + recordCount);
 
 
             } catch (java.sql.SQLException e) {
