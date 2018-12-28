@@ -1,10 +1,10 @@
 package DataManagerUnitTests;
 
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.CSVSource;
-import com.plesba.datamanager.source.KinesisSource;
-import com.plesba.datamanager.target.CSVTarget;
-import com.plesba.datamanager.target.KinesisTarget;
+import com.plesba.datamanager.source.CSVSourceToStream;
+import com.plesba.datamanager.source.KinesisSourceToStream;
+import com.plesba.datamanager.target.CSVTargetFromStream;
+import com.plesba.datamanager.target.KinesisTargetFromStream;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -28,27 +28,27 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author REnee
  */
-public class KinesisSourceTest {
+public class KinesisSourceToStreamTest {
     private static PipedOutputStream outputStream1 = null;
     private static PipedInputStream inputStream1 = null;
     private static PipedOutputStream outputStream2 = null;
     private static PipedInputStream inputStream2 = null;
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
-    private static CSVSource csvSource = null;
-    private static CSVTarget csvTarget = null;
+    private static CSVSourceToStream csvSource = null;
+    private static CSVTargetFromStream csvTargetFromStream = null;
     private long recordCountCSVIn = 0;
     private long recordCountCSVOut = 0;
     private long maxRecordsToProcess =3;
     private long maxrecordstoprocess = 0;
-    private static KinesisTarget kWriter = null;
-    private static KinesisSource kReader = null;
+    private static KinesisTargetFromStream kWriter = null;
+    private static KinesisSourceToStream kReader = null;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
     private static String csvFilenameIn;
     private static String csvFilenameOut;
     private static Properties dataMgrProps = null;
     private static Properties kwProp;
     private static Properties krProp;
-    public KinesisSourceTest() {
+    public KinesisSourceToStreamTest() {
     }
 
     @BeforeClass
@@ -75,10 +75,10 @@ public class KinesisSourceTest {
     public void testRun() throws IOException {
 
 
-        LOG.info("KinesisSourceTest starting");
+        LOG.info("KinesisSourceToStreamTest starting");
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        LOG.info("KinesisSourceTest properties obtained");
+        LOG.info("KinesisSourceToStreamTest properties obtained");
 
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
@@ -87,8 +87,8 @@ public class KinesisSourceTest {
 
         csvFilenameIn = dataMgrProps.getProperty("csv.infilename");
 
-        csvSource = new CSVSource(csvFilenameIn, outputStream1);
-        LOG.info("CSVSource starting CSVSource: " + csvFilenameIn);
+        csvSource = new CSVSourceToStream(csvFilenameIn, outputStream1);
+        LOG.info("CSVSourceToStream starting CSVSourceToStream: " + csvFilenameIn);
 
         new Thread(
                 new Runnable() {
@@ -101,7 +101,7 @@ public class KinesisSourceTest {
         recordCountCSVIn = Files.lines(Paths.get(csvFilenameIn)).count();
 
         //kinesis producer, read from input stream / write to kinesis stream (producer)
-        LOG.info("KinesisSourceTest starting Kinesis Target (producer). ");
+        LOG.info("KinesisSourceToStreamTest starting Kinesis Target (producer). ");
         kwProp = new Properties();
         kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
         kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
@@ -111,7 +111,7 @@ public class KinesisSourceTest {
         kwProp.setProperty("kinesis.maxrecordstoprocess", String.valueOf(maxRecordsToProcess));
 
         try {
-            kWriter = new KinesisTarget(kwProp, inputStream1);
+            kWriter = new KinesisTargetFromStream(kwProp, inputStream1);
             new Thread(
                     new Runnable() {
                         public void run() {
@@ -120,11 +120,11 @@ public class KinesisSourceTest {
                     }
             ).start();
         } catch (InterruptedException ex) {
-            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         //kinesis consumer, read from kinesis stream / write to output stream
-        LOG.info("KinesisSourceTest starting KinesisSource (consumer). ");
+        LOG.info("KinesisSourceToStreamTest starting KinesisSourceToStream (consumer). ");
 
         krProp = new Properties();
         krProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
@@ -138,7 +138,7 @@ public class KinesisSourceTest {
         krProp.setProperty("kinesis.maxrecordstoprocess", String.valueOf(maxRecordsToProcess));
 
         try {
-            kReader = new KinesisSource(krProp, outputStream2);
+            kReader = new KinesisSourceToStream(krProp, outputStream2);
             new Thread(
                     new Runnable() {
                         public void run() {
@@ -148,18 +148,18 @@ public class KinesisSourceTest {
             ).start();
         } catch (Exception ex) {
 
-            Logger.getLogger(KinesisSource.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KinesisSourceToStream.class.getName()).log(Level.SEVERE, null, ex);
         }
         //csv, read from input stream / write to  csv
-        LOG.info("KinesisSourceTest starting csv target. ");
+        LOG.info("KinesisSourceToStreamTest starting csv target. ");
         csvFilenameOut=dataMgrProps.getProperty("csv.outfilename");
-        csvTarget = new CSVTarget(csvFilenameOut, inputStream2);
-        csvTarget.processDataFromInputStream();
+        csvTargetFromStream = new CSVTargetFromStream(csvFilenameOut, inputStream2);
+        csvTargetFromStream.processDataFromInputStream();
 
         recordCountCSVOut = Files.lines(Paths.get(csvFilenameOut)).count();
 
         assertEquals(maxRecordsToProcess, recordCountCSVOut);
-        LOG.info("KinesisSourceTest completed");
+        LOG.info("KinesisSourceToStreamTest completed");
     }
 
 }

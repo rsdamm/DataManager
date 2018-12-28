@@ -2,8 +2,8 @@
 package DataManagerUnitTests;
 
         import com.plesba.datamanager.DataManager;
-        import com.plesba.datamanager.source.CSVSource;
-        import com.plesba.datamanager.target.KinesisTarget;
+        import com.plesba.datamanager.source.CSVSourceToStream;
+        import com.plesba.datamanager.target.KinesisTargetFromStream;
         import com.plesba.datamanager.utils.DMProperties;
         import java.io.IOException;
         import java.io.PipedInputStream;
@@ -27,20 +27,20 @@ package DataManagerUnitTests;
  *
  * @author REnee
  */
-public class KinesisTargetTest {
+public class KinesisTargetFromStreamTest {
     private static PipedOutputStream outputStream1 = null;
     private static PipedInputStream inputStream1 = null; 
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
-    private static CSVSource csvSource = null; 
+    private static CSVSourceToStream csvSource = null;
     private long recordCountCSVIn = 0;
     private long recordCountStreamOut = 0;
     private long maxStreamCount = 0;
-    private static KinesisTarget kWriter = null; 
+    private static KinesisTargetFromStream kWriter = null;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
     private static String csvFilenameIn; 
     private static Properties dataMgrProps = null;
     private static Properties kwProp; 
-    public KinesisTargetTest() {
+    public KinesisTargetFromStreamTest() {
     }
 
     @BeforeClass
@@ -67,18 +67,18 @@ public class KinesisTargetTest {
     public void testRun() throws IOException {
 
 
-        LOG.info("KinesisTargetTest starting");
+        LOG.info("KinesisTargetFromStreamTest starting");
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        LOG.info("KinesisTargetTest properties obtained");
+        LOG.info("KinesisTargetFromStreamTest properties obtained");
 
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1); 
 
         csvFilenameIn = dataMgrProps.getProperty("csv.infilename");
 
-        csvSource = new CSVSource(csvFilenameIn, outputStream1);
-        LOG.info("CSVSource starting CSVSource: " + csvFilenameIn);
+        csvSource = new CSVSourceToStream(csvFilenameIn, outputStream1);
+        LOG.info("CSVSourceToStream starting CSVSource: " + csvFilenameIn);
 
         new Thread(
                 new Runnable() {
@@ -91,7 +91,7 @@ public class KinesisTargetTest {
         recordCountCSVIn = Files.lines(Paths.get(csvFilenameIn)).count();
 
         //kinesis producer, read from input stream / write to kinesis stream (producer)
-        LOG.info("KinesisTargetTest starting Kinesis Target (producer). ");
+        LOG.info("KinesisTargetFromStreamTest starting Kinesis Target (producer). ");
         kwProp = new Properties();
         kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
         kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
@@ -100,12 +100,12 @@ public class KinesisTargetTest {
         kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
 
         try {
-            kWriter = new KinesisTarget(kwProp, inputStream1);
+            kWriter = new KinesisTargetFromStream(kwProp, inputStream1);
             kWriter.processDataFromInputStream();
             recordCountStreamOut=kWriter.GetLoadedCount();
 
         } catch (InterruptedException ex) {
-            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         maxStreamCount =  Integer.parseInt(dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
@@ -119,7 +119,7 @@ public class KinesisTargetTest {
         }
 
 
-        LOG.info("KinesisTargetTest completed");
+        LOG.info("KinesisTargetFromStreamTest completed");
     }
 
 }

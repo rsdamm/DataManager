@@ -1,8 +1,8 @@
 package DataManagerUnitTests;
 
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.CSVSource;
-import com.plesba.datamanager.target.DBTarget;
+import com.plesba.datamanager.source.CSVSourceToStream;
+import com.plesba.datamanager.target.DBTargetFromStream;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 import org.apache.commons.logging.Log;
@@ -19,7 +19,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
-public class DBTargetTest {
+public class DBTargetFromStreamTest {
 
     private static PipedOutputStream outputStream1 = null;
     private static PipedInputStream inputStream1 = null;
@@ -28,13 +28,13 @@ public class DBTargetTest {
     private long csvRecordCount = 0;
     private long recordCountAfter = 0;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
-    private static DBTarget dbLoader = null;
+    private static DBTargetFromStream dbLoader = null;
     private static DBConnection dbConnection = null;
     private static Connection connection;
 
-    private static CSVSource csvSource = null;
+    private static CSVSourceToStream csvSource = null;
 
-    public DBTargetTest() {
+    public DBTargetFromStreamTest() {
     }
 
     @BeforeClass
@@ -61,40 +61,40 @@ public class DBTargetTest {
     @Test
     public void testRun() throws IOException {
 
-        LOG.info("DBTargetTest starting");
+        LOG.info("DBTargetFromStreamTest starting");
 
         dbProp = new DMProperties(propertiesFile).getProp();
-        LOG.info("DBTargetTest properties obtained");
+        LOG.info("DBTargetFromStreamTest properties obtained");
 
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
 
-        csvSource = new CSVSource(dbProp.getProperty("csv.infilename"), outputStream1);
+        csvSource = new CSVSourceToStream(dbProp.getProperty("csv.infilename"), outputStream1);
         csvSource.putDataOnOutputStream();
 
         csvRecordCount = Files.lines(Paths.get(dbProp.getProperty("csv.infilename"))).count();
-        LOG.info("CSVSourceTest Input file record count : " + csvRecordCount);
+        LOG.info("CSVSourceToStreamTest Input file record count : " + csvRecordCount);
 
         dbConnection = new DBConnection(dbProp);
         Connection connection = connection = dbConnection.getConnection();
 
 
-        dbLoader = new DBTarget(connection, inputStream1);
+        dbLoader = new DBTargetFromStream(connection, inputStream1);
 
         int dbrecordCountBefore = dbLoader.getRecordCountInTable();
-        LOG.info("DBTargetTest record count : " + csvRecordCount);
+        LOG.info("DBTargetFromStreamTest record count : " + csvRecordCount);
 
         dbLoader.processDataFromInputStream();
 
         int dbRecordCountAfter = dbLoader.getRecordCountInTable();
-        LOG.info("DBTargetTest records written to table " + (dbRecordCountAfter - dbrecordCountBefore));
+        LOG.info("DBTargetFromStreamTest records written to table " + (dbRecordCountAfter - dbrecordCountBefore));
  
-        LOG.info("CSVSourceTest Input file record count : " + recordCountAfter);
+        LOG.info("CSVSourceToStreamTest Input file record count : " + recordCountAfter);
 
         dbConnection.closeConnection();
 
         assertEquals(dbRecordCountAfter - dbrecordCountBefore, csvRecordCount);
-        LOG.info("DBTargetTest completed");
+        LOG.info("DBTargetFromStreamTest completed");
     }
 
 }

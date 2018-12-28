@@ -7,7 +7,7 @@ package DataManagerUnitTests;
 
  
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.CSVSource;
+import com.plesba.datamanager.source.CSVSourceToStream;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -28,18 +28,18 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author REnee
  */
-public class CSVSourceTest {
+public class CSVSourceToStreamTest {
     private static PipedOutputStream outputStream1 = null;
     private static PipedInputStream inputStream1 = null;
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
-    private static CSVSource csvSource = null;
+    private static CSVSourceToStream csvSource = null;
     private long recordCount = 0;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
     private static String csvFilename;
     private static Properties dataMgrProps = null;
 
     private static Properties dbProp;
-    public CSVSourceTest() {
+    public CSVSourceToStreamTest() {
     }
     
     @BeforeClass
@@ -66,7 +66,7 @@ public class CSVSourceTest {
     public void testRun() throws IOException {
         
 
-        LOG.info("CSVSourceTest starting");
+        LOG.info("CSVSourceToStreamTest starting");
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
         LOG.info("CVSourceTest properties obtained");
@@ -74,20 +74,20 @@ public class CSVSourceTest {
         inputStream1 = new PipedInputStream();
         outputStream1 = new PipedOutputStream(inputStream1);
         csvFilename = dataMgrProps.getProperty("csv.infilename");
-        LOG.info("CSVSourceTest input from DB file: " + csvFilename);
+        LOG.info("CSVSourceToStreamTest input from DB file: " + csvFilename);
 
-        csvSource = new CSVSource(csvFilename, outputStream1);
+        csvSource = new CSVSourceToStream(csvFilename, outputStream1);
         csvSource.putDataOnOutputStream();
 
         recordCount = Files.lines(Paths.get(csvFilename)).count();
-        LOG.info("CSVSourceTest Input file record count : " + recordCount);
+        LOG.info("CSVSourceToStreamTest Input file record count : " + recordCount);
         
         int result = csvSource.getReadCount();
-        LOG.info("CSVSourceTest Loaded " + result + " records");
+        LOG.info("CSVSourceToStreamTest Loaded " + result + " records");
 
-        LOG.info("CSVSourceTest Stream written count: " + result);
+        LOG.info("CSVSourceToStreamTest Stream written count: " + result);
         assertEquals(recordCount, result);
-        LOG.info("CSVSourceTest completed");
+        LOG.info("CSVSourceToStreamTest completed");
     }
     
 }
