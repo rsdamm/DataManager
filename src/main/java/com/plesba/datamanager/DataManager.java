@@ -12,8 +12,8 @@ import com.plesba.datapiper.target.DBTargetFromStream;
 import com.plesba.datapiper.target.KinesisTargetFromStream;
 import com.plesba.datapiper.transformers.NullTransformer;
 import com.plesba.datapiper.transformers.ReverseTransformer;
-import com.plesba.beammanager.BeamTransformer;
 import com.plesba.datapiper.target.CSVTargetFromStream;
+import com.plesba.databeamer.BeamTransformer;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 
@@ -54,6 +54,7 @@ public class DataManager {
         private static Properties kwProp;
         private static Properties krProp;
         private static Properties dbProp;
+        private static Properties beamProp;
         private static String datasource;
         private static String datatarget;
         private static String transformType = "null";
@@ -87,22 +88,20 @@ public class DataManager {
         LOG.info("DataManager datatarget =  " + datatarget);
         LOG.info("DataManager transformtype = " + transformType);
 
-        if (transformType = 'beam') { // beam requires collections not output/input streams
+        if (transformType.equals("beam")) { // beam requires collections not output/input streams
             LOG.info("DataManager BeamTransformer selected.");
-            // - pcollection for input - csv file is source
 
-            //build input collection
-
-
+            //get properties
             if (datasource.equals("csv")) {
                 csvSourceFilename = dataMgrProps.getProperty("csv.infilename");
+                beamProp.setProperty("beam.infilename", dataMgrProps.getProperty("csv.infilename"));
             }
-
             else {
                 LOG.error("DataManager no known source selected. See property: dm.datasource");
             }
             if (datatarget.equals("csv")) {
                 csvTargetFilename = dataMgrProps.getProperty("csv.outfilename");
+                beamProp.setProperty("beam.outfilename", dataMgrProps.getProperty("csv.outfilename"));
                 LOG.info("DataManager output to csv. ");
             }
             else {
@@ -110,7 +109,7 @@ public class DataManager {
                 LOG.error("DataManager - no known target selected - see property: dm.datatarget");
             }
 
-            beamTransformer = new BeamTransformer(csvSourceFilename, csvTargetFilename);
+            beamTransformer = new BeamTransformer(beamProp);
             beamTransformer.processDataFromInput();
         }
         else { // all processes that interact with output/input streams
