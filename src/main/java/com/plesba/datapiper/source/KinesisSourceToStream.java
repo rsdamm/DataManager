@@ -1,4 +1,4 @@
-package com.plesba.datamanager.source;
+package com.plesba.datapiper.source;
 
 import java.io.IOException;
 import java.io.PipedOutputStream;

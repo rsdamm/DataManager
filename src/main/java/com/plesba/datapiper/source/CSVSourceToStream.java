@@ -1,5 +1,5 @@
 
-package com.plesba.datamanager.source;
+package com.plesba.datapiper.source;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

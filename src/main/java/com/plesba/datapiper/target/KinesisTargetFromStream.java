@@ -1,4 +1,4 @@
-package com.plesba.datamanager.target;
+package com.plesba.datapiper.target;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.kinesis.AmazonKinesis;

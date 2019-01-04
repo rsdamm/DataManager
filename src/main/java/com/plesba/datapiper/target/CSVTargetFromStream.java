@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.plesba.datamanager.target;
+package com.plesba.datapiper.target;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
