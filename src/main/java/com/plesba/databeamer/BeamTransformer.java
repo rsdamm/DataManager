@@ -1,7 +1,7 @@
 package com.plesba.databeamer;
 
-import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.*;
+import org.apache.beam.sdk.values.KV;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,10 +46,17 @@ public class BeamTransformer {
 
         LOG.info("BeamTransformer started processing with files: " + csvInFile + "/" + csvOutFile);
     }
-    static class ComputeWordLengthFn extends DoFn<String, Integer> {
+    //static class ComputeLineLengthFn extends DoFn<String, Integer> {
+    //    @ProcessElement
+    //    public void processElement(ProcessContext c){
+    //
+    //        LOG.info("BeamTransformer transforming record " ); //+ c.element().getKey());
+    //        c.output
 
-    }
-    public void processDataFromInput() throws IOException {
+    //    }
+    //}
+
+    public processDataFromInput() throws IOException {
 
         try {
                 LOG.info("BeamTransformer reading from input file/writing to output file");
@@ -58,11 +65,36 @@ public class BeamTransformer {
                 Pipeline p = Pipeline.create(options);
 
                 //create input collection
-                PCollection<String> words = p.apply(TextIO.read().from(csvInFile));
+                PCollection<String> input = p.apply(TextIO.read().from(csvInFile));
 
-                //apply Pardo
-                PCollection<Integer> wordLengths = words.apply("ComputeWordLengths",
-                    ParDo.of(new ComputeWordLengthFn()));
+                //do the transformation
+                PCollection<KV<String, Integer>> parseAndConvertToKV =
+                        input.apply("ParseAndConvertToKV",
+                                MapElements.via(
+                                    new SimpleFunction<String, KV<String, Integer>> () {
+                                        @Override
+                                        public KV<String, Integer> apply (String input){
+                                            String key = input;
+                                            Integer value = Integer.valueOf(key.length());
+                                             return KV.of(key, value);
+                                        }
+
+                                    } ));
+
+                PCollection<String> convertToString =
+                        KV.apply("convertToString",
+                        ParDo.of(
+                                new DoFn <KV<String, Integer>>,String>() {
+
+                            @ProcessElement
+                                    public void processElement(ProcessContext context){
+
+
+                }
+            }));
+
+                //write data out
+                convertToString.apply(TextIO.write().to(csvOutFile));
 
                 p.run();
 
