@@ -224,7 +224,7 @@ public class DataManager {
                     Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            else if (datatarget.equals("kafkastream")) {
+            else if (datatarget.equals("kafkastream")) {     
                 //kafka producer, read from input stream / write to kafka stream (producer)
                 LOG.info("DataManager output to KafkaTargetFromStream stream (producer). ");
 
