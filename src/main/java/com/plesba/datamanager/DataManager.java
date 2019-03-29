@@ -8,8 +8,10 @@ package com.plesba.datamanager;
 import com.plesba.datapiper.source.CSVSourceToStream;
 import com.plesba.datapiper.source.DBSourceToStream;
 import com.plesba.datapiper.source.KinesisSourceToStream;
+//import com.plesba.datapiper.source.KafkaSourceToStream;
 import com.plesba.datapiper.target.DBTargetFromStream;
 import com.plesba.datapiper.target.KinesisTargetFromStream;
+import com.plesba.datapiper.target.KafkaTargetFromStream;
 import com.plesba.datapiper.transformers.NullTransformer;
 import com.plesba.datapiper.transformers.ReverseTransformer;
 import com.plesba.datapiper.target.CSVTargetFromStream;
@@ -51,10 +53,14 @@ public class DataManager {
         private static CSVTargetFromStream csvTargetFromStream = null;
         private static KinesisTargetFromStream kWriter = null;
         private static KinesisSourceToStream kReader = null;
+        private static KafkaTargetFromStream kfWriter = null;
+    //private static KafkaSourceToStream kfReader = null;
         private static Properties kwProp;
         private static Properties krProp;
         private static Properties dbProp;
         private static Properties beamProp;
+        private static Properties kfwProp;
+        private static Properties kfrProp;
         private static String datasource;
         private static String datatarget;
         private static String transformType = "null";
@@ -90,7 +96,7 @@ public class DataManager {
 
         if (transformType.equals("beam")) { // beam requires collections not output/input streams
             LOG.info("DataManager BeamTransformer selected.");
-
+            beamProp = new Properties();
             //get properties
             if (datasource.equals("csv")) {
                 csvSourceFilename = dataMgrProps.getProperty("csv.infilename");
@@ -118,7 +124,7 @@ public class DataManager {
 
             inputStream2 = new PipedInputStream();
             outputStream2 = new PipedOutputStream(inputStream2);
-            if (datasource.equals("stream")) {
+            if (datasource.equals("kinesisstream")) {
 
                 //kinesis consumer, read from kinesis stream / write to output stream
                 LOG.info("DataManager input from Kinesis stream (consumer). ");
@@ -199,7 +205,7 @@ public class DataManager {
             // end of transformer setup
 
             //begin target setup
-            if (datatarget.equals("stream")) {
+            if (datatarget.equals("kinesisstream")) {
 
                 //kinesis producer, read from input stream / write to kinesis stream (producer)
                 LOG.info("DataManager output to KinesisTargetFromStream stream (producer). ");
@@ -216,6 +222,26 @@ public class DataManager {
                     kWriter.processDataFromInputStream();
                 } catch (InterruptedException ex) {
                     Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            else if (datatarget.equals("kafkastream")) {
+                //kafka producer, read from input stream / write to kafka stream (producer)
+                LOG.info("DataManager output to KafkaTargetFromStream stream (producer). ");
+
+                kfwProp = new Properties();
+                kfwProp.setProperty("kafka.client.id", dataMgrProps.getProperty("kafka.client.id"));
+                kfwProp.setProperty("kafka.acks", dataMgrProps.getProperty("kafka.acks"));
+                kfwProp.setProperty("kafka.bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
+                kfwProp.setProperty("kafka.topic.name", dataMgrProps.getProperty("kafka.topic.name"));
+                kfwProp.setProperty("kafka.maxrecordstoprocess", dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
+                kfwProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
+                kfwProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
+
+                try {
+                    kfWriter = new KafkaTargetFromStream(kfwProp, inputStream2);
+                    kfWriter.processDataFromInputStream();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(KafkaTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else if (datatarget.equals("db")) {
                 //db, read from input stream / write to db
