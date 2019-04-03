@@ -224,16 +224,15 @@ public class DataManager {
                     Logger.getLogger(KinesisTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            else if (datatarget.equals("kafkastream")) {     
+            else if (datatarget.equals("kafkastream")) {
                 //kafka producer, read from input stream / write to kafka stream (producer)
                 LOG.info("DataManager output to KafkaTargetFromStream stream (producer). ");
 
                 kfwProp = new Properties();
-                kfwProp.setProperty("kafka.client.id", dataMgrProps.getProperty("kafka.client.id"));
-                kfwProp.setProperty("kafka.acks", dataMgrProps.getProperty("kafka.acks"));
-                kfwProp.setProperty("kafka.bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
-                kfwProp.setProperty("kafka.topic.name", dataMgrProps.getProperty("kafka.topic.name"));
-                kfwProp.setProperty("kafka.maxrecordstoprocess", dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
+                kfwProp.setProperty("client.id", dataMgrProps.getProperty("kafka.client.id"));
+                kfwProp.setProperty("acks", dataMgrProps.getProperty("kafka.acks"));
+                kfwProp.setProperty("bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
+                kfwProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
                 kfwProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
                 kfwProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
 
