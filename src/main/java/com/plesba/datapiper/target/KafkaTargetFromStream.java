@@ -27,7 +27,7 @@ public class KafkaTargetFromStream {
     private static final String DEFAULT_ACKS = "1";
     private static final String DEFAULT_CLIENTID = "localhost";
     private static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";
-    private static final String DEFAULT_TOPIC_NAME = "rsdKFStream1";
+    private static final String DEFAULT_TOPIC = "rsdKFStream1";
     private static final String DEFAULT_KEY_SERIALIZER = "defaultkey";
     private static final String DEFAULT_VALUE_SERIALIZER = "defaultvalue";
     private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = -1;
@@ -35,7 +35,7 @@ public class KafkaTargetFromStream {
     private static String acks = DEFAULT_ACKS;
     private static String clientId = DEFAULT_CLIENTID;
     private static String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
-    private static String topicName = DEFAULT_TOPIC_NAME;
+    private static String topic = DEFAULT_TOPIC;
     private static Integer maxRecordsToProcess = DEFAULT_MAX_RECORDS_TO_PROCESS;
 
     private static String keySerializer = DEFAULT_KEY_SERIALIZER;
@@ -49,41 +49,40 @@ public class KafkaTargetFromStream {
 
         inputStream = parameterInputStream;
 
-        String acksOverride = parameterProperties.getProperty("kafka.acks");
+        String acksOverride = parameterProperties.getProperty("acks");
         if (acksOverride != null) {
             acks = acksOverride;
         }
 
         LOG.info("KafkaTargetFromStream using acks " + acks);
 
-        String clientIdOverride = parameterProperties.getProperty("kafka.client.id");
+        String clientIdOverride = parameterProperties.getProperty("client.id");
         if (clientIdOverride != null) {
             clientId = clientIdOverride;
         } else {
-            try {
-            clientId = InetAddress.getLocalHost().getHostName();
+            try { clientId = InetAddress.getLocalHost().getHostName();
             } catch (Exception ex) {
                 Logger.getLogger(KafkaTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         LOG.info("KafkaTargetFromStream using clientId " + clientId);
 
-        String bootstrapserversOverride = parameterProperties.getProperty("kafka.bootstrap.servers");
+        String bootstrapserversOverride = parameterProperties.getProperty("bootstrap.servers");
         if (bootstrapserversOverride != null) {
             bootstrapServers = bootstrapserversOverride;
         }
 
-        LOG.info("KafkaTargetFromStream using clientId " + clientId);
+        LOG.info("KafkaTargetFromStream using bootstrapservers " + bootstrapServers);
 
 
-        String topicNameOverride = parameterProperties.getProperty("kafka.topic.name");
-        if (topicNameOverride != null) {
-            topicName = topicNameOverride;
+        String topicOverride = parameterProperties.getProperty("topic");
+        if (topicOverride != null) {
+            topic = topicOverride;
         }
 
-        LOG.info("KafkaTargetFromStream using topicName " + topicName);
+        LOG.info("KafkaTargetFromStream using topic " + topic);
 
-        String maxRecordsToProcessOverride = parameterProperties.getProperty("kafka.maxrecordstoprocess");
+        String maxRecordsToProcessOverride = parameterProperties.getProperty("maxrecordstoprocess");
         if (maxRecordsToProcessOverride != null) {
             maxRecordsToProcess = Integer.parseInt(maxRecordsToProcessOverride);
 
@@ -96,7 +95,7 @@ public class KafkaTargetFromStream {
 
         }
 
-        LOG.info("KafkaTargetFromStream using keySerializer " + maxRecordsToProcess);
+        LOG.info("KafkaTargetFromStream using key serializer " + keySerializer);
 
         String valueSerializerOverride = parameterProperties.getProperty("value.serializer");
         if (valueSerializerOverride != null) {
@@ -106,8 +105,7 @@ public class KafkaTargetFromStream {
 
         LOG.info("KafkaTargetFromStream using value serializer " + valueSerializer);
 
-        Producer<String, String> producer = new KafkaProducer
-                <String, String>(parameterProperties);
+        producer = new KafkaProducer <String, String>(parameterProperties);
 
         LOG.info("KafkaTargetFromStream created Kafka Producer ");
 
@@ -119,7 +117,7 @@ public class KafkaTargetFromStream {
 
     public void processDataFromInputStream() {
 
-        LOG.info("KafkaTargetFromStream started stream processing " + topicName);
+        LOG.info("KafkaTargetFromStream started stream processing " + topic);
 
         StringBuilder recordStringBuffer = new StringBuilder();
         String streamRecord = new String();
@@ -131,9 +129,9 @@ public class KafkaTargetFromStream {
             while (streamByte != -1 & !stopProcessing) {   //end of stream
                 if (streamByte != 10) {  //end of line
                     recordStringBuffer.append((char) streamByte);
-                } else { // process record
+                } else { // write record to stream
                     streamRecord = recordStringBuffer.toString() + '\n';
-                    ProducerRecord<String, String> rec = new ProducerRecord<String, String>(topicName, streamRecord);
+                    ProducerRecord<String, String> rec = new ProducerRecord<String, String>(topic, streamRecord);
                     LOG.info("KafkaTargetFromStream record to put placed on stream: " + streamRecord);
                     try {
                         producer.send(rec);
@@ -146,7 +144,6 @@ public class KafkaTargetFromStream {
 
                     LOG.info("KafkaTargetFromStream records written to stream: " + recordCount);
                 }
-
 
                 streamByte = inputStream.read();
             }
