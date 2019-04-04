@@ -8,7 +8,7 @@ package com.plesba.datamanager;
 import com.plesba.datapiper.source.CSVSourceToStream;
 import com.plesba.datapiper.source.DBSourceToStream;
 import com.plesba.datapiper.source.KinesisSourceToStream;
-//import com.plesba.datapiper.source.KafkaSourceToStream;
+import com.plesba.datapiper.source.KafkaSourceToStream;
 import com.plesba.datapiper.target.DBTargetFromStream;
 import com.plesba.datapiper.target.KinesisTargetFromStream;
 import com.plesba.datapiper.target.KafkaTargetFromStream;
@@ -54,7 +54,7 @@ public class DataManager {
         private static KinesisTargetFromStream kWriter = null;
         private static KinesisSourceToStream kReader = null;
         private static KafkaTargetFromStream kfWriter = null;
-    //private static KafkaSourceToStream kfReader = null;
+        private static KafkaSourceToStream kfReader = null;
         private static Properties kwProp;
         private static Properties krProp;
         private static Properties dbProp;
@@ -151,7 +151,32 @@ public class DataManager {
                 } catch (Exception ex) {
                     Logger.getLogger(KinesisSourceToStream.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            } else if (datasource.equals("csv")) {
+            } else if (datasource.equals("kafkastream")) {
+
+                    //kinesis consumer, read from kinesis stream / write to output stream
+                    LOG.info("DataManager input from Kafka stream (consumer). ");
+
+                    kfrProp = new Properties();
+                    kfrProp.setProperty("client.id", dataMgrProps.getProperty("kafka.client.id"));
+                    kfrProp.setProperty("acks", dataMgrProps.getProperty("kafka.acks"));
+                    kfrProp.setProperty("bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
+                    kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
+                    kfrProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
+                    kfrProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
+
+                    try {
+                        kReader = new KafkaSourceToStream(krProp, outputStream1);
+                        new Thread(
+                                new Runnable() {
+                                    public void run() {
+                                        kfReader.processData();
+                                    }
+                                }
+                        ).start();
+                    } catch (Exception ex) {
+                        Logger.getLogger(KafkaSourceToStream.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else if (datasource.equals("csv")) {
                 //csvreader - read from csv file / write to output stream
                 csvSourceFilename = dataMgrProps.getProperty("csv.infilename");
                 csvSourceToStream = new CSVSourceToStream(csvSourceFilename, outputStream1);
@@ -235,6 +260,7 @@ public class DataManager {
                 kfwProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
                 kfwProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
                 kfwProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
+                kfwProp.setProperty("producer.type", dataMgrProps.getProperty("kafka.producer.type"));
 
                 try {
                     kfWriter = new KafkaTargetFromStream(kfwProp, inputStream2);

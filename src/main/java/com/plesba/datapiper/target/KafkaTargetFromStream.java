@@ -1,6 +1,5 @@
 package com.plesba.datapiper.target;
 
-import com.amazonaws.AmazonServiceException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -9,10 +8,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.io.PipedInputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.InetAddress;
@@ -22,7 +18,6 @@ public class KafkaTargetFromStream {
 
     private PipedInputStream inputStream;
     private int recordCount =0;
-    private String streamStatus= null;
 
     private static final String DEFAULT_ACKS = "1";
     private static final String DEFAULT_CLIENTID = "localhost";
@@ -30,6 +25,7 @@ public class KafkaTargetFromStream {
     private static final String DEFAULT_TOPIC = "rsdKFStream1";
     private static final String DEFAULT_KEY_SERIALIZER = "defaultkey";
     private static final String DEFAULT_VALUE_SERIALIZER = "defaultvalue";
+    private static final String DEFAULT_PRODUCER_TYPE = "sync";
     private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = -1;
 
     private static String acks = DEFAULT_ACKS;
@@ -37,15 +33,17 @@ public class KafkaTargetFromStream {
     private static String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
     private static String topic = DEFAULT_TOPIC;
     private static Integer maxRecordsToProcess = DEFAULT_MAX_RECORDS_TO_PROCESS;
-
     private static String keySerializer = DEFAULT_KEY_SERIALIZER;
     private static String valueSerializer = DEFAULT_VALUE_SERIALIZER;
+    private static String producerType = DEFAULT_PRODUCER_TYPE;
 
     private boolean stopProcessing=false;
     private Producer<String, String> producer;
     private static final Log LOG = LogFactory.getLog(KafkaTargetFromStream.class);
 
     public KafkaTargetFromStream(Properties parameterProperties, PipedInputStream parameterInputStream) throws InterruptedException {
+
+        LOG.info("KafkaTargetFromStream (producer) started processing.");
 
         inputStream = parameterInputStream;
 
@@ -105,6 +103,15 @@ public class KafkaTargetFromStream {
 
         LOG.info("KafkaTargetFromStream using value serializer " + valueSerializer);
 
+        String producerTypeOverride = parameterProperties.getProperty("producer.type");
+        if (producerTypeOverride != null) {
+            producerType = producerTypeOverride;
+
+        }
+
+        LOG.info("KafkaTargetFromStream using producer type (sync vs async) " + producerType);
+
+
         producer = new KafkaProducer <String, String>(parameterProperties);
 
         LOG.info("KafkaTargetFromStream created Kafka Producer ");
@@ -148,18 +155,17 @@ public class KafkaTargetFromStream {
                 streamByte = inputStream.read();
             }
 
-            producer.close();
-
             LOG.info("KafkaTargetFromStream completed and processed "+ recordCount + " records.");
 
         } catch(Exception ex){
 
             LOG.error("KafkaTargetFromStream error detected in processDataFromInputStream " ,ex);
 
+        } finally {
+            producer.close();
         }
 
         LOG.info("KafkaTargetFromStream (Producer) finished processing");
     }
-
 
 }
