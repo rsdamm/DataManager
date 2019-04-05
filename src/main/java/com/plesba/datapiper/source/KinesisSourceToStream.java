@@ -74,7 +74,6 @@ public class KinesisSourceToStream {
         if (appNameOverride != null) {
             applicationName = appNameOverride;
         }
-
         LOG.info("KinesisSourceToStream (consumer) application name "+ applicationName);
 
         String streamNameOverride = parameterProperties.getProperty("kinesis.streamname");

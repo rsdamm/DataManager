@@ -153,7 +153,7 @@ public class DataManager {
                 }
             } else if (datasource.equals("kafkastream")) {
 
-                    //kinesis consumer, read from kinesis stream / write to output stream
+                    //kafka consumer, read from kafka stream / write to output stream
                     LOG.info("DataManager input from Kafka stream (consumer). ");
 
                     kfrProp = new Properties();
@@ -161,11 +161,12 @@ public class DataManager {
                     kfrProp.setProperty("acks", dataMgrProps.getProperty("kafka.acks"));
                     kfrProp.setProperty("bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
                     kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
-                    kfrProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
-                    kfrProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
+                    kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
+                    kfrProp.setProperty("key.deserializer", dataMgrProps.getProperty("kafka.key.deserializer.class"));
+                    kfrProp.setProperty("value.deserializer", dataMgrProps.getProperty("kafka.value.deserializer.class"));
 
                     try {
-                        kReader = new KafkaSourceToStream(krProp, outputStream1);
+                        kfReader = new KafkaSourceToStream(krProp, outputStream1);
                         new Thread(
                                 new Runnable() {
                                     public void run() {

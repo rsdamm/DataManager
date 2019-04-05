@@ -4,19 +4,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 
 import java.io.PipedOutputStream;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.Collections;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.net.InetAddress;
-
-
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharacterCodingException;
-import java.util.UUID;
 
 //reads kafka stream writes to output stream
 public class KafkaSourceToStream {
@@ -25,7 +19,7 @@ public class KafkaSourceToStream {
     private static final String DEFAULT_GROUP_ID_CONFIG = "rsdKFGroup1";
     private static final String DEFAULT_KEY_DESERIALIZER = "defaultkey";
     private static final String DEFAULT_VALUE_DESERIALIZER = "defaultvalue";
-    private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = -1;
+    private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = 1;
     private static final String DEFAULT_TOPIC = "rsdKFStream1";
 
     private static String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
@@ -43,6 +37,7 @@ public class KafkaSourceToStream {
     private PipedOutputStream outputStream;
     private int recordCount = 0;
     private boolean stopProcessing=false;
+    private int recordsCount = 0;
 
     private static boolean refresh = true;
 
@@ -100,37 +95,41 @@ public class KafkaSourceToStream {
 
         LOG.info("KafkaSourceToStream using topic " + topic);
 
-        final Consumer<Long, String> consumer = new KafkaConsumer(parameterProperties);
+        //create the consumer
+        consumer = new KafkaConsumer(parameterProperties);
         LOG.info("KafkaSourceToStream Consumer created ");
 
 
     }
-
+    public int getReadCount ()    {
+        return this.recordCount ;
+    }
 
     public void processData() {
 
+        //subscribe to topic
         consumer.subscribe(Collections.singletonList(topic));
-        final int giveUp = 100;   int noRecordsCount = 0;
+
+        Duration d = Duration.ofSeconds(10);
 
         while (true) {
-            final ConsumerRecords<Long, String> consumerRecords =
-                    consumer.poll(1000);
+            final ConsumerRecords<Long, String> consumerRecords = consumer.poll(d);
 
             if (consumerRecords.count()==0) {
-                noRecordsCount++;
-                if (noRecordsCount > giveUp) break;
+                recordsCount++;
+                if (recordsCount > maxRecordsToProcess) break;
                 else continue;
             }
 
             consumerRecords.forEach(record -> {
                 putDataOnOutputStream (
-                        "Key: " + record.key() + " Value: " + record.value() + " Partition: " + record.partition(), + " Offset: " +record.offset());
+                        "Key: " + record.key() + " Value: " + record.value() + " Partition: " + record.partition() + " Offset: " +record.offset());
             });
 
             consumer.commitAsync();
         }
         consumer.close();
-        System.out.println("KafkaSourceToStream (consumer) - processing completed writing "+ noRecordsCount + " records.");
+        System.out.println("KafkaSourceToStream (consumer) - processing completed writing "+ recordsCount + " records.");
     }
 
 
