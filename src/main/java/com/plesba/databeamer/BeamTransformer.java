@@ -55,8 +55,16 @@ public class BeamTransformer {
 
     //    }
     //}
+    static class convertToString extends DoFn<KV<String, Integer>, String> {
+        @ProcessElement
 
-    public processDataFromInput() throws IOException {
+            public void processElement(ProcessContext context){
+          //      String data = context.element().getKey() + " "
+          //              + toString(context.element().getValue());
+           //     context.output(data);
+            }
+    }
+    public void processDataFromInput() throws IOException {
 
         try {
                 LOG.info("BeamTransformer reading from input file/writing to output file");
@@ -67,36 +75,24 @@ public class BeamTransformer {
                 //create input collection
                 PCollection<String> input = p.apply(TextIO.read().from(csvInFile));
 
-                //do the transformation
-                PCollection<KV<String, Integer>> parseAndConvertToKV =
-                        input.apply("ParseAndConvertToKV",
-                                MapElements.via(
-                                    new SimpleFunction<String, KV<String, Integer>> () {
-                                        @Override
-                                        public KV<String, Integer> apply (String input){
-                                            String key = input;
-                                            Integer value = Integer.valueOf(key.length());
-                                             return KV.of(key, value);
-                                        }
-
-                                    } ));
-
-                PCollection<String> convertToString =
-                        KV.apply("convertToString",
-                        ParDo.of(
-                                new DoFn <KV<String, Integer>>,String>() {
-
-                            @ProcessElement
-                                    public void processElement(ProcessContext context){
-
-
-                }
-            }));
+                //do the transformation convertToString
+          //      PCollection<KV<String, Integer>> parseAndConvertToKV =
+          //              input.apply("ParseAndConvertToKV",
+           //                     MapElements.via(
+          //                          new SimpleFunction<String, KV<String, Integer>>() {
+          //                              @Override
+          //                              public KV<String, Integer> apply (String input){
+          //                                  String key = input;
+          //                                  Integer value = Integer.valueOf(key.length());
+          //                                   return KV.of(key, value);
+          //                              }
+           //                         } ))
+           //             .apply(ParDo.of(new convertToString<KV<String, Integer>,String>));
 
                 //write data out
-                convertToString.apply(TextIO.write().to(csvOutFile));
+            //    convertToString.apply(TextIO.write().to(csvOutFile));
 
-                p.run();
+             //   p.run();
 
                 LOG.info("BeamTransformer transformation performed; output collection created ");
 

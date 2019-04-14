@@ -1,10 +1,10 @@
 package DataManagerUnitTests;
 
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.CSVSourceToStream;
-import com.plesba.datamanager.target.CSVTargetFromStream;
+import com.plesba.datapiper.source.CSVSourceToStream;
+import com.plesba.datapiper.target.CSVTargetFromStream;
 import com.plesba.datamanager.utils.DMProperties;
-import com.plesba.datamanager.transformers.NullTransformer;
+import com.plesba.datapiper.transformers.NullTransformer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.*;

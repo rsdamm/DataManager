@@ -161,12 +161,11 @@ public class DataManager {
                     kfrProp.setProperty("acks", dataMgrProps.getProperty("kafka.acks"));
                     kfrProp.setProperty("bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
                     kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
-                    kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
                     kfrProp.setProperty("key.deserializer", dataMgrProps.getProperty("kafka.key.deserializer.class"));
                     kfrProp.setProperty("value.deserializer", dataMgrProps.getProperty("kafka.value.deserializer.class"));
-
+                    kfrProp.setProperty("group.id", dataMgrProps.getProperty("kafka.group_id_config"));
                     try {
-                        kfReader = new KafkaSourceToStream(krProp, outputStream1);
+                        kfReader = new KafkaSourceToStream(kfrProp, outputStream1);
                         new Thread(
                                 new Runnable() {
                                     public void run() {

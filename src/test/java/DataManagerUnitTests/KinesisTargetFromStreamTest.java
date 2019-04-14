@@ -2,8 +2,8 @@
 package DataManagerUnitTests;
 
         import com.plesba.datamanager.DataManager;
-        import com.plesba.datamanager.source.CSVSourceToStream;
-        import com.plesba.datamanager.target.KinesisTargetFromStream;
+        import com.plesba.datapiper.source.CSVSourceToStream;
+        import com.plesba.datapiper.target.KinesisTargetFromStream;
         import com.plesba.datamanager.utils.DMProperties;
         import java.io.IOException;
         import java.io.PipedInputStream;

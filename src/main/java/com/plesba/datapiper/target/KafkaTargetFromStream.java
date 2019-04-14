@@ -3,9 +3,7 @@ package com.plesba.datapiper.target;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.*;
 
 import java.io.PipedInputStream;
 import java.util.Properties;
@@ -22,7 +20,7 @@ public class KafkaTargetFromStream {
     private static final String DEFAULT_ACKS = "1";
     private static final String DEFAULT_CLIENTID = "localhost";
     private static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";
-    private static final String DEFAULT_TOPIC = "rsdKFStream1";
+    private static final String DEFAULT_TOPIC = "test";
     private static final String DEFAULT_KEY_SERIALIZER = "defaultkey";
     private static final String DEFAULT_VALUE_SERIALIZER = "defaultvalue";
     private static final String DEFAULT_PRODUCER_TYPE = "sync";
@@ -125,6 +123,7 @@ public class KafkaTargetFromStream {
     public void processDataFromInputStream() {
 
         LOG.info("KafkaTargetFromStream started stream processing " + topic);
+        LOG.info("KafkaTargetFromStream mode: " + producerType  );
 
         StringBuilder recordStringBuffer = new StringBuilder();
         String streamRecord = new String();
@@ -141,7 +140,11 @@ public class KafkaTargetFromStream {
                     ProducerRecord<String, String> rec = new ProducerRecord<String, String>(topic, streamRecord);
                     LOG.info("KafkaTargetFromStream record to put placed on stream: " + streamRecord);
                     try {
-                        producer.send(rec);
+                        if (producerType.equals ("sync")) { //sync
+                            producer.send(rec);
+                        }
+                        else producer.send(rec, new producerCallback()); //async
+
                     } catch (Exception ex) {
                         Logger.getLogger(KafkaTargetFromStream.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -149,7 +152,7 @@ public class KafkaTargetFromStream {
                     recordStringBuffer.setLength(0);
                     if (recordCount >= maxRecordsToProcess & maxRecordsToProcess > -1 ){ stopProcessing = true;}
 
-                    LOG.info("KafkaTargetFromStream records written to stream: " + recordCount);
+                    LOG.info("KafkaTargetFromStream records written to stream " + producerType + " : " + recordCount);
                 }
 
                 streamByte = inputStream.read();
@@ -167,5 +170,14 @@ public class KafkaTargetFromStream {
 
         LOG.info("KafkaTargetFromStream (Producer) finished processing");
     }
+    class producerCallback implements Callback {
 
+        @Override
+        public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+            if (e != null)
+                System.out.println("KafkaTargetFromStream async failed with an exception");
+            else
+                System.out.println("KafkaTargetFromStream async call successful");
+        }
+    }
 }

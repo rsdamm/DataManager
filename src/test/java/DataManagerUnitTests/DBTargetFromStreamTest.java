@@ -1,8 +1,8 @@
 package DataManagerUnitTests;
 
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.CSVSourceToStream;
-import com.plesba.datamanager.target.DBTargetFromStream;
+import com.plesba.datapiper.source.CSVSourceToStream;
+import com.plesba.datapiper.target.DBTargetFromStream;
 import com.plesba.datamanager.utils.DBConnection;
 import com.plesba.datamanager.utils.DMProperties;
 import org.apache.commons.logging.Log;

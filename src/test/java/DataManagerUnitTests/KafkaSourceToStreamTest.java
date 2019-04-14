@@ -132,7 +132,6 @@ public class KafkaSourceToStreamTest {
         kfrProp.setProperty("acks", dataMgrProps.getProperty("kafka.acks"));
         kfrProp.setProperty("bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
         kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
-        kfrProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
         kfrProp.setProperty("key.deserializer", dataMgrProps.getProperty("kafka.key.deserializer.class"));
         kfrProp.setProperty("value.deserializer", dataMgrProps.getProperty("kafka.value.deserializer.class"));
 

@@ -20,7 +20,7 @@ public class KafkaSourceToStream {
     private static final String DEFAULT_KEY_DESERIALIZER = "defaultkey";
     private static final String DEFAULT_VALUE_DESERIALIZER = "defaultvalue";
     private static final int DEFAULT_MAX_RECORDS_TO_PROCESS = 1;
-    private static final String DEFAULT_TOPIC = "rsdKFStream1";
+    private static final String DEFAULT_TOPIC = "test";
 
     private static String bootstrapServers = DEFAULT_BOOTSTRAP_SERVERS;
     private static String groupIdConfig = DEFAULT_GROUP_ID_CONFIG;
@@ -50,6 +50,8 @@ public class KafkaSourceToStream {
 
         outputStream = parameterOutputStream;
 
+        LOG.info(" testing parameter access " + parameterProperties.getProperty("bootstrap.servers"));
+
         String bootstrapserversOverride = parameterProperties.getProperty("bootstrap.servers");
         if (bootstrapserversOverride != null) {
             bootstrapServers = bootstrapserversOverride;
@@ -64,12 +66,12 @@ public class KafkaSourceToStream {
         }
         LOG.info("KafkaSourceToStream using maxrecordstoprocess " + maxRecordsToProcess);
 
-        String groupIdConfigOverride = parameterProperties.getProperty("group_id_config");
+        String groupIdConfigOverride = parameterProperties.getProperty("group_id");
         if (groupIdConfigOverride != null) {
             groupIdConfig = groupIdConfigOverride;
 
         }
-        LOG.info("KafkaSourceToStream using groupIdConfig " + groupIdConfig);
+        LOG.info("KafkaSourceToStream using groupId " + groupIdConfig);
 
 
         String keyDeserializerOverride = parameterProperties.getProperty("key.deserializer");

@@ -1,7 +1,7 @@
 package DataManagerUnitTests;
 
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.DBSourceToStream;
+import com.plesba.datapiper.source.DBSourceToStream;
 import com.plesba.datamanager.utils.DMProperties;
 import java.io.IOException;
 import java.io.PipedInputStream;
