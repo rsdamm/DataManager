@@ -99,9 +99,11 @@ public class KafkaTargetFromStreamTest {
         kfwProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
         kfwProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
         kfwProp.setProperty("producer.type", dataMgrProps.getProperty("kafka.producer.type"));
+        kfwProp.setProperty("maxrecordstoprocess", dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
         try {
             kfWriter = new KafkaTargetFromStream(kfwProp, inputStream1);
             kfWriter.processDataFromInputStream();
+            recordCountStreamOut=kfWriter.GetLoadedCount();
         } catch (InterruptedException ex) {
             Logger.getLogger(KafkaTargetFromStreamTest.class.getName()).log(Level.SEVERE, null, ex);
         }

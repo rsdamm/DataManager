@@ -164,6 +164,7 @@ public class DataManager {
                     kfrProp.setProperty("key.deserializer", dataMgrProps.getProperty("kafka.key.deserializer.class"));
                     kfrProp.setProperty("value.deserializer", dataMgrProps.getProperty("kafka.value.deserializer.class"));
                     kfrProp.setProperty("group.id", dataMgrProps.getProperty("kafka.group_id_config"));
+                    kfrProp.setProperty("maxrecordstoprocess", dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
                     try {
                         kfReader = new KafkaSourceToStream(kfrProp, outputStream1);
                         new Thread(
@@ -261,6 +262,7 @@ public class DataManager {
                 kfwProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
                 kfwProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
                 kfwProp.setProperty("producer.type", dataMgrProps.getProperty("kafka.producer.type"));
+                kfwProp.setProperty("maxrecordstoprocess", dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
 
                 try {
                     kfWriter = new KafkaTargetFromStream(kfwProp, inputStream2);

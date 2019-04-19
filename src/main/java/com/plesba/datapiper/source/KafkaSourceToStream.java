@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.PipedOutputStream;
 import java.io.IOException;
@@ -37,7 +38,6 @@ public class KafkaSourceToStream {
     private PipedOutputStream outputStream;
     private int recordCount = 0;
     private boolean stopProcessing=false;
-    private int recordsCount = 0;
 
     private static boolean refresh = true;
 
@@ -109,46 +109,55 @@ public class KafkaSourceToStream {
 
     public void processData() {
 
+        LOG.info("KafkaSourceToStream (consumer) processData started");
+
         //subscribe to topic
         consumer.subscribe(Collections.singletonList(topic));
 
+
+        LOG.info("KafkaSourceToStream (consumer) topic subscribed");
+
         Duration d = Duration.ofSeconds(10);
+
+
+        LOG.info("KafkaSourceToStream (consumer) starting loop");
 
         while (true) {
             final ConsumerRecords<Long, String> consumerRecords = consumer.poll(d);
 
+
+            LOG.info("KafkaSourceToStream (consumer) polled");
+
             if (consumerRecords.count()==0) {
-                recordsCount++;
-                if (recordsCount > maxRecordsToProcess) break;
+                recordCount++;
+                LOG.info("KafkaSourceToStream (consumer) incremented record count!!!!!!!!!!!!!!");
+                if (recordCount > maxRecordsToProcess & maxRecordsToProcess > -1) break;
                 else continue;
             }
 
             consumerRecords.forEach(record -> {
-                putDataOnOutputStream (
-                        "Key: " + record.key() + " Value: " + record.value() + " Partition: " + record.partition() + " Offset: " +record.offset());
+                putDataOnOutputStream("Key: " + record.key() + " Value: " + record.value() + " Partition: " + record.partition() + " Offset: " +record.offset());
             });
 
             consumer.commitAsync();
         }
         consumer.close();
-        System.out.println("KafkaSourceToStream (consumer) - processing completed writing "+ recordsCount + " records.");
+        try {
+            LOG.info("KafkaSourceToStream (consumer) closing output stream");
+            outputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("KafkaSourceToStream (consumer) - processing completed processing "+ recordCount + " records.");
+
+
     }
 
-
-    private void putDataOnOutputStream (String data) throws RuntimeException {
+    private void putDataOnOutputStream(String data) throws RuntimeException {
 
         try {
             outputStream.write(data.getBytes());
-
-            LOG.debug("KafkaSourceToStream (consumer) writing record to piped output stream---> " + recordStringBuffer);
-            recordCount++;
-
-            if (recordCount >= maxRecordsToProcess & maxRecordsToProcess > -1) {
-                LOG.info("KafkaSourceToStream (consumer) max records to process limit achieved");
-                stopProcessing = true;
-            }
-
-            recordStringBuffer.setLength(0);
+            LOG.debug("KafkaSourceToStream (consumer) writing record to piped output stream-----> " + data);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
