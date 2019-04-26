@@ -87,8 +87,14 @@ public class KafkaSourceToStreamTest {
 
         csvFilenameIn = dataMgrProps.getProperty("csv.infilename");
 
+        LOG.info("KafkaSourceToStreamTest csvFilenameIn: " + csvFilenameIn);
+
+        maxRecordsToProcess = Integer.parseInt(dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
+
+        LOG.info("KafkaSourceToStreamTest maxRecordsToProcess: " + maxRecordsToProcess);
+
         csvSource = new CSVSourceToStream(csvFilenameIn, outputStream1);
-        LOG.info("CSVSourceToStream starting CSVSourceToStream: " + csvFilenameIn);
+        LOG.info("KafkaSourceToStreamTest starting CSVSourceToStream: " + csvFilenameIn);
 
         new Thread(
                 new Runnable() {
