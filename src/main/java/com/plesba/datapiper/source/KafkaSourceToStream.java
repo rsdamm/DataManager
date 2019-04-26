@@ -128,17 +128,16 @@ public class KafkaSourceToStream {
 
             LOG.info("KafkaSourceToStream (consumer) polled");
 
-            if (consumerRecords.count()==0) {
-                recordCount++;
-                LOG.info("KafkaSourceToStream (consumer) incremented record count!!!!!!!!!!!!!!");
-                if (recordCount > maxRecordsToProcess & maxRecordsToProcess > -1) break;
-                else continue;
-            }
+
 
             consumerRecords.forEach(record -> {
                 putDataOnOutputStream("Key: " + record.key() + " Value: " + record.value() + " Partition: " + record.partition() + " Offset: " +record.offset());
             });
 
+            if (consumerRecords.count()>0) {
+                if (recordCount > maxRecordsToProcess & maxRecordsToProcess > -1) break;
+                else continue;
+            }
             consumer.commitAsync();
         }
         consumer.close();
@@ -158,6 +157,7 @@ public class KafkaSourceToStream {
         try {
             outputStream.write(data.getBytes());
             LOG.debug("KafkaSourceToStream (consumer) writing record to piped output stream-----> " + data);
+            recordCount++;
 
         } catch (IOException e) {
             throw new RuntimeException(e);
