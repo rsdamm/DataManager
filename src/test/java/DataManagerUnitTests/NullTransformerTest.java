@@ -1,10 +1,10 @@
 package DataManagerUnitTests;
 
 import com.plesba.datamanager.DataManager;
-import com.plesba.datamanager.source.CSVSource;
-import com.plesba.datamanager.target.CSVTarget;
+import com.plesba.datapiper.source.CSVSourceToStream;
+import com.plesba.datapiper.target.CSVTargetFromStream;
 import com.plesba.datamanager.utils.DMProperties;
-import com.plesba.datamanager.transformers.NullTransformer;
+import com.plesba.datapiper.transformers.NullTransformer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.*;
@@ -24,8 +24,8 @@ public class NullTransformerTest {
     private static PipedOutputStream outputStream2 = null;
     private static PipedInputStream inputStream2 = null;
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
-    private static CSVSource csvSource = null;
-    private static CSVTarget csvTarget = null;
+    private static CSVSourceToStream csvSource = null;
+    private static CSVTargetFromStream csvTargetFromStream = null;
     private static NullTransformer nullTransformer = null;
     private long recordCountIn = 0;
     private long recordCountOut = 0;
@@ -79,7 +79,7 @@ public class NullTransformerTest {
         csvOutfilename = dataMgrProps.getProperty("csv.outfilename");
         LOG.info("NullTransformerTest output file: " + csvOutfilename);
 
-        csvSource = new CSVSource(csvInfilename, outputStream1);
+        csvSource = new CSVSourceToStream(csvInfilename, outputStream1);
         csvSource.putDataOnOutputStream();
 
         recordCountIn = Files.lines(Paths.get(csvInfilename)).count();
@@ -91,8 +91,8 @@ public class NullTransformerTest {
         transformCount = nullTransformer.getTransformedCount();
         LOG.info("NullTransformerTest transformer processed count : " + transformCount);
 
-        csvTarget = new CSVTarget(csvOutfilename, inputStream2);
-        csvTarget.processDataFromInputStream();
+        csvTargetFromStream = new CSVTargetFromStream(csvOutfilename, inputStream2);
+        csvTargetFromStream.processDataFromInputStream();
 
         recordCountOut = Files.lines(Paths.get(csvOutfilename)).count();
         LOG.info("Output file record count : " + recordCountOut);

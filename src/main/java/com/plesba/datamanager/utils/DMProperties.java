@@ -7,7 +7,6 @@ import java.util.Properties;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 
 public class DMProperties {
 

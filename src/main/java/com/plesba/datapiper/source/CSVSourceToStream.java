@@ -1,39 +1,35 @@
 
-package com.plesba.datamanager.source;
-
-import com.opencsv.CSVReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PipedOutputStream;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
+package com.plesba.datapiper.source;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PipedOutputStream;
+
 // reads a csv file and writes to output stream
-public final class CSVSource
-{    
+public final class CSVSourceToStream
+{
     private final String fileToRead;
-    
+
     private com.opencsv.CSVReader reader = null;
     private PipedOutputStream outputStream = null;
-    private int recordCount = 0; 
-    private String [] nextLine = null;  
+    private int recordCount = 0;
+    private String [] nextLine = null;
     private byte[] theByteArray = null;
     private StringBuilder recordStringBuffer;
     private int i=0;
 
-    private static final Log LOG = LogFactory.getLog(CSVSource.class);
-    
-    public CSVSource(String rfn, PipedOutputStream parameterOutputStream ) {
-       fileToRead = rfn;  
+    private static final Log LOG = LogFactory.getLog(CSVSourceToStream.class);
+
+    public CSVSourceToStream(String rfn, PipedOutputStream parameterOutputStream ) {
+       fileToRead = rfn;
        outputStream = parameterOutputStream;
        csvreaderSetup();
-    
+
     }
-    public CSVSource() {
+    public CSVSourceToStream() {
         this.recordStringBuffer = null;
             fileToRead = null; 
             outputStream = null;
@@ -42,9 +38,9 @@ public final class CSVSource
  
     public void csvreaderSetup() {
 
-        LOG.info("CSVSource started processing.");
+        LOG.info("CSVSourceToStream started processing.");
         try {
-             //Get the CSVSource instance specifying the delimiter to be used
+             //Get the CSVSourceToStream instance specifying the delimiter to be used
             reader = new com.opencsv.CSVReader(new FileReader(fileToRead),',');
             }   
         catch (IOException e) {
@@ -74,14 +70,14 @@ public final class CSVSource
           theByteArray = recordStringBuffer.toString().getBytes();
           outputStream.write(theByteArray);
 
-          LOG.info("CSVSource writing record to stream---> "+ recordStringBuffer);
+          LOG.info("CSVSourceToStream writing record to stream---> "+ recordStringBuffer);
           recordCount++;
           recordStringBuffer.setLength(0);
         }
 
         outputStream.close();
 
-        LOG.info("CSVSource finished processing "+ recordCount +" records");
+        LOG.info("CSVSourceToStream finished processing "+ recordCount +" records");
 
        } catch (IOException e) {
                     throw new RuntimeException(e);

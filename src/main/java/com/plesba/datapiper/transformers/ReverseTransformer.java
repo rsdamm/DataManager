@@ -1,4 +1,4 @@
-package com.plesba.datamanager.transformers;
+package com.plesba.datapiper.transformers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -8,7 +8,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
 public class ReverseTransformer {
-    private final PipedInputStream inputStream;
+    private PipedInputStream inputStream;
     private PipedOutputStream outputStream;
     private int recordCount = 0;
     private byte[] theByteArray = null;
@@ -17,7 +17,7 @@ public class ReverseTransformer {
 
     public ReverseTransformer(PipedInputStream parameterInputStream, PipedOutputStream parameterOutputStream ) {
 
-        LOG.info("NullTransformer started processing");
+        LOG.info("ReverseTransformer started processing");
         inputStream = parameterInputStream;
         outputStream = parameterOutputStream;
     }

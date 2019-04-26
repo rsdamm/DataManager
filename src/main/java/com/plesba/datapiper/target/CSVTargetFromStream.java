@@ -3,53 +3,49 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.plesba.datamanager.target;
+package com.plesba.datapiper.target;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.FileWriter;
-import java.sql.*;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author renee
  * <p>
  * Writes to csv file
  */
-public class CSVTarget {
+public class CSVTargetFromStream {
 
-    private final PipedInputStream inputStream;
+    private PipedInputStream inputStream;
     private int recordCount = 0;
     private FileWriter fileWriter;
     private String outFile;
 
-    private static final Log LOG = LogFactory.getLog(CSVTarget.class);
+    private static final Log LOG = LogFactory.getLog(CSVTargetFromStream.class);
 
-    public CSVTarget(String parameterOutFilename, PipedInputStream parameterInputStream) {
+    public CSVTargetFromStream(String parameterOutFilename, PipedInputStream parameterInputStream) {
 
-        LOG.info("CSVTarget started processing");
+        LOG.info("CSVTargetFromStream started processing");
         inputStream = parameterInputStream;
         outFile = parameterOutFilename;
 
-        LOG.info("CSVTarget outputFile: " + outFile);
+        LOG.info("CSVTargetFromStream outputFile: " + outFile);
     }
 
-    public CSVTarget() {
+    public CSVTargetFromStream() {
 
-        LOG.info("CSVTarget started processing with no parameters");
+        LOG.info("CSVTargetFromStream started processing with no parameters");
         inputStream = null;
         fileWriter = null;
     }
 
     public void processDataFromInputStream() throws IOException {
-        LOG.info("CSVTarget processDataFromInputStream");
+        LOG.info("CSVTargetFromStream processDataFromInputStream");
         try {
-            LOG.info("CSVTarget writing to " + outFile);
+            LOG.info("CSVTargetFromStream writing to " + outFile);
             fileWriter = fileWriter = new FileWriter(outFile);
 
             StringBuilder recordStringBuffer = new StringBuilder();
@@ -69,14 +65,14 @@ public class CSVTarget {
                     streamRecord = recordStringBuffer.toString() + '\n';
                     fileWriter.append(streamRecord);
 
-                    LOG.info("CSVTarget Processed record: " + streamRecord);
+                    LOG.info("CSVTargetFromStream Processed record: " + streamRecord);
                     recordStringBuffer.setLength(0);
                 }
                 streamByte = inputStream.read();
 
             }
 
-            LOG.info("CSVTarget all records processed.");
+            LOG.info("CSVTargetFromStream all records processed.");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,7 +81,7 @@ public class CSVTarget {
 
                 fileWriter.flush();
                 fileWriter.close();
-                LOG.info(String.format("CSVTarget finished processing - records processed: %d", recordCount));
+                LOG.info(String.format("CSVTargetFromStream finished processing - records processed: %d", recordCount));
 
             } catch (IOException e) {
 

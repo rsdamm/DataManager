@@ -1,6 +1,5 @@
 package com.plesba.datamanager.utils;
 
-import com.plesba.datamanager.utils.DMProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.util.Properties;

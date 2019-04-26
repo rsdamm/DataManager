@@ -1,9 +1,8 @@
-
 package DataManagerUnitTests;
 
         import com.plesba.datamanager.DataManager;
-        import com.plesba.datamanager.source.CSVSource;
-        import com.plesba.datamanager.target.KinesisTarget;
+        import com.plesba.datapiper.source.CSVSourceToStream;
+        import com.plesba.datapiper.target.KafkaTargetFromStream;
         import com.plesba.datamanager.utils.DMProperties;
         import java.io.IOException;
         import java.io.PipedInputStream;
@@ -27,20 +26,20 @@ package DataManagerUnitTests;
  *
  * @author REnee
  */
-public class KinesisTargetTest {
+public class KafkaTargetFromStreamTest {
     private static PipedOutputStream outputStream1 = null;
-    private static PipedInputStream inputStream1 = null; 
+    private static PipedInputStream inputStream1 = null;
     private static String propertiesFile = "/Users/renee/IdeaProjects/DataManager/config.properties";
-    private static CSVSource csvSource = null; 
+    private static CSVSourceToStream csvSource = null;
     private long recordCountCSVIn = 0;
     private long recordCountStreamOut = 0;
     private long maxStreamCount = 0;
-    private static KinesisTarget kWriter = null; 
+    private static KafkaTargetFromStream kfWriter = null;
     private static final Log LOG = LogFactory.getLog(DataManager.class);
-    private static String csvFilenameIn; 
+    private static String csvFilenameIn;
     private static Properties dataMgrProps = null;
-    private static Properties kwProp; 
-    public KinesisTargetTest() {
+    private static Properties kfwProp;
+    public KafkaTargetFromStreamTest() {
     }
 
     @BeforeClass
@@ -67,18 +66,18 @@ public class KinesisTargetTest {
     public void testRun() throws IOException {
 
 
-        LOG.info("KinesisTargetTest starting");
+        LOG.info("KafkaTargetFromStreamTest starting");
 
         dataMgrProps = new DMProperties(propertiesFile).getProp();
-        LOG.info("KinesisTargetTest properties obtained");
+        LOG.info("KafkaTargetFromStreamTest properties obtained");
 
         inputStream1 = new PipedInputStream();
-        outputStream1 = new PipedOutputStream(inputStream1); 
+        outputStream1 = new PipedOutputStream(inputStream1);
 
         csvFilenameIn = dataMgrProps.getProperty("csv.infilename");
 
-        csvSource = new CSVSource(csvFilenameIn, outputStream1);
-        LOG.info("CSVSource starting CSVSource: " + csvFilenameIn);
+        csvSource = new CSVSourceToStream(csvFilenameIn, outputStream1);
+        LOG.info("CSVSourceToStream starting CSVSource: " + csvFilenameIn);
 
         new Thread(
                 new Runnable() {
@@ -90,25 +89,26 @@ public class KinesisTargetTest {
 
         recordCountCSVIn = Files.lines(Paths.get(csvFilenameIn)).count();
 
-        //kinesis producer, read from input stream / write to kinesis stream (producer)
-        LOG.info("KinesisTargetTest starting Kinesis Target (producer). ");
-        kwProp = new Properties();
-        kwProp.setProperty("kinesis.streamname", dataMgrProps.getProperty("kinesis.streamname"));
-        kwProp.setProperty("kinesis.streamsize", dataMgrProps.getProperty("kinesis.streamsize"));
-        kwProp.setProperty("kinesis.region", dataMgrProps.getProperty("kinesis.region"));
-        kwProp.setProperty("kinesis.partitionkey", dataMgrProps.getProperty("kinesis.partitionkey"));
-        kwProp.setProperty("kinesis.maxrecordstoprocess", dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
-
+        //kafka producer, read from input stream / write to kafka stream (producer)
+        LOG.info("KafkaTargetFromStreamTest starting Kafka Target (producer). ");
+        kfwProp = new Properties();
+        kfwProp.setProperty("client.id", dataMgrProps.getProperty("kafka.client.id"));
+        kfwProp.setProperty("acks", dataMgrProps.getProperty("kafka.acks"));
+        kfwProp.setProperty("bootstrap.servers", dataMgrProps.getProperty("kafka.bootstrap.servers"));
+        kfwProp.setProperty("topic", dataMgrProps.getProperty("kafka.topic"));
+        kfwProp.setProperty("key.serializer", dataMgrProps.getProperty("kafka.key.serializer.class"));
+        kfwProp.setProperty("value.serializer", dataMgrProps.getProperty("kafka.value.serializer.class"));
+        kfwProp.setProperty("producer.type", dataMgrProps.getProperty("kafka.producer.type"));
+        kfwProp.setProperty("maxrecordstoprocess", dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
         try {
-            kWriter = new KinesisTarget(kwProp, inputStream1);
-            kWriter.processDataFromInputStream();
-            recordCountStreamOut=kWriter.GetLoadedCount();
-
+            kfWriter = new KafkaTargetFromStream(kfwProp, inputStream1);
+            kfWriter.processDataFromInputStream();
+            recordCountStreamOut=kfWriter.GetLoadedCount();
         } catch (InterruptedException ex) {
-            Logger.getLogger(KinesisTarget.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(KafkaTargetFromStreamTest.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        maxStreamCount =  Integer.parseInt(dataMgrProps.getProperty("kinesis.maxrecordstoprocess"));
+        maxStreamCount =  Integer.parseInt(dataMgrProps.getProperty("kafka.maxrecordstoprocess"));
         if (maxStreamCount >0)
         {
             assertEquals(maxStreamCount, recordCountStreamOut);
@@ -119,7 +119,8 @@ public class KinesisTargetTest {
         }
 
 
-        LOG.info("KinesisTargetTest completed");
+        LOG.info("KafkaTargetFromStreamTest completed");
     }
 
 }
+

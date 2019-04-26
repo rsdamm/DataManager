@@ -1,4 +1,4 @@
-package com.plesba.datamanager.source; 
+package com.plesba.datapiper.source;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,7 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-public class DBSource {
+public class DBSourceToStream {
 
     private final Connection connection;
     private final PipedOutputStream outputStream;
@@ -25,20 +25,20 @@ public class DBSource {
     private int tableRecordCount = 0;
     private String rowCallSign = null;
 
-    private static final Log LOG = LogFactory.getLog(DBSource.class);
+    private static final Log LOG = LogFactory.getLog(DBSourceToStream.class);
 
-    public DBSource(Connection parameterConnection, PipedOutputStream parameterOutputStream) {
+    public DBSourceToStream(Connection parameterConnection, PipedOutputStream parameterOutputStream) {
         outputStream = parameterOutputStream;
         connection = parameterConnection;
 
-        LOG.info("DBSource started processing");
+        LOG.info("DBSourceToStream started processing");
     }
 
-    public DBSource() {
+    public DBSourceToStream() {
         outputStream = null;
         connection = null;
 
-        LOG.info("DBSource started processing with no parameters");
+        LOG.info("DBSourceToStream started processing with no parameters");
     }
 
 
@@ -59,7 +59,7 @@ public class DBSource {
 
                     rowName = rs.getString("name");
                     rowCallSign = rs.getString("call_sign");
-                    LOG.info("DBSource query result: " + rowName + " - " + rowCallSign);
+                    LOG.info("DBSourceToStream query result: " + rowName + " - " + rowCallSign);
 
                     dbRecord = rowName + ',' + rowCallSign ;
                     nextLine = dbRecord.split(" ") ;
@@ -70,19 +70,19 @@ public class DBSource {
                     theByteArray = recordStringBuffer.toString().getBytes();
                     outputStream.write(theByteArray);
 
-                    LOG.info("DBSource writing record to stream---> "+ recordStringBuffer);
+                    LOG.info("DBSourceToStream writing record to stream---> "+ recordStringBuffer);
                     recordCount++;
                     recordStringBuffer.setLength(0);
                 }
                 outputStream.close();
-                LOG.info("DBSource finished processing" + recordCount);
+                LOG.info("DBSourceToStream finished processing" + recordCount);
 
             } catch (java.sql.SQLException e) {
                 System.err.println(e);
                 e.printStackTrace();
             }
 
-            LOG.info("DBSource processed all records from table; Records written to output stream: " + recordCount);
+            LOG.info("DBSourceToStream processed all records from table; Records written to output stream: " + recordCount);
 
         }
         catch (Exception e) {
@@ -109,7 +109,7 @@ public class DBSource {
 
         try {
 
-            LOG.info("DBSource.getRecordCountInTable starting " + recordCount);
+            LOG.info("DBSourceToStream.getRecordCountInTable starting " + recordCount);
             try {
 
                 String query = "SELECT count(*) as record_count FROM ham_call_signs";
@@ -123,7 +123,7 @@ public class DBSource {
                     tableRecordCount = Integer.parseInt(rs.getString("record_count"));
 
                 }
-                LOG.info("DBSource.getRecordCountInTable finished processing " + recordCount);
+                LOG.info("DBSourceToStream.getRecordCountInTable finished processing " + recordCount);
 
             } catch (java.sql.SQLException e) {
                 System.err.println(e);

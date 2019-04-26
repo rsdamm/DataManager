@@ -22,8 +22,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.junit.Assert.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
